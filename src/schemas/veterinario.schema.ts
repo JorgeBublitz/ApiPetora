@@ -2,13 +2,13 @@ import { z, ZodError } from "zod";
 
 // 📘 Schema de criação
 export const createVeterinarioSchema = z.object({
-    nome: z.string().nonempty("O nome é obrigatório").min(3),
+    nome: z.string().nonempty("O nome é obrigatório"),
     email: z.string().email("Email inválido"),
     senha: z.string()
         .min(6, "A senha deve ter no mínimo 6 caracteres")
         .regex(/\d/, "A senha deve conter pelo menos um número")
         .regex(/[!@#$%^&*(),.?":{}|<>]/, "A senha deve conter pelo menos um caractere especial"),
-    especialidade: z.string().nonempty("Especialidade obrigatória").min(8),
+    especialidade: z.string().nonempty("Especialidade obrigatória"),
     consultaIds: z.array(z.number().int()).optional(), // IDs opcionais, valida depois no controller
 });
 

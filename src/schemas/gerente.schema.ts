@@ -3,8 +3,7 @@ import { z, ZodError } from "zod";
 // 📘 Schema de criação
 export const createGerenteSchema = z.object({
     nome: z.string()
-        .nonempty("O nome é obrigatório")
-        .min(3, "O nome deve ter pelo menos 3 caracteres"),
+        .nonempty("O nome é obrigatório"),
     email: z.string()
         .email("Email inválido"),
     senha: z.string()

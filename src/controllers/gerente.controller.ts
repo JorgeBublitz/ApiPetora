@@ -5,12 +5,16 @@ import {
     updateGerenteSchema,
     deleteGerenteSchema,
     formatZodError
-} from "../schemas/gerente.scheme"
+} from "../schemas/gerente.schema"
 
 const gerenteController = {
     getAll: async (req: Request, res: Response) => {
         try {
             const gerentes = await gerenteService.getAll();
+
+            if (gerentes.length === 0) {
+                return res.status(200).json({ message: "Nenhum gerente encontrado!" });
+            }
             res.json(gerentes);
         } catch (err: any) {
             res.status(500).json({ error: err.message });
@@ -61,7 +65,7 @@ const gerenteController = {
         try {
             const data = deleteGerenteSchema.parse({
                 id: Number(req.params.id),
-                gerenteId: Number(req.body.gerenteId), // quem tenta deletar
+                gerenteId: Number(req.body.gerenteId),
             });
 
             await gerenteService.delete(data.id);

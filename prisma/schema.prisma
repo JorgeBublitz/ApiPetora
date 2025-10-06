@@ -19,6 +19,7 @@ model Gerente {
   updatedAt DateTime @updatedAt
 }
 
+
 // Dono do animal
 model Tutor {
   id       Int    @id @default(autoincrement())
@@ -80,6 +81,7 @@ model Consulta {
   updatedAt     DateTime @updatedAt
   veterinarioId Int
 }
+
 
 model Veterinario {
   id            Int        @id @default(autoincrement())
