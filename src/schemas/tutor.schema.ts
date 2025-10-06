@@ -6,7 +6,6 @@ export const createTutorSchema = z.object({
         .nonempty("O nome é obrigatório")
         .min(3, "O nome deve ter pelo menos 3 caracteres"),
     email: z.string()
-        .email("Email inválido"),
 });
 
 // 📘 Schema de atualização
