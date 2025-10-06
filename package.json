@@ -1,35 +1,46 @@
 {
-  "name": "apipetora",
+  "name": "backend",
   "version": "1.0.0",
-  "description": "Sistema de gestão para petshops, com controle de clientes, animais, vendedores e registros de vendas e serviços.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "nodemon src/index.ts",
+    "seed": "prisma db seed"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/JorgeBublitz/ApiPetora.git"
+  "prisma": {
+    "seed": "ts-node src/prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/JorgeBublitz/ApiPetora/issues"
-  },
-  "homepage": "https://github.com/JorgeBublitz/ApiPetora#readme",
+  "description": "API REST para gerenciamento hospitalar, construída com Node.js, Express, Prisma e PostgreSQL. Permite cadastro e gerenciamento completo de usuários, médicos, enfermeiros, secretários, pacientes e agendamentos.",
   "dependencies": {
-    "@prisma/client": "^6.16.3",
-    "dotenv": "^17.2.3",
+    "@prisma/client": "^6.16.2",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.2",
     "express": "^5.1.0",
-    "prisma": "^6.16.3",
-    "zod": "^4.1.11"
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.3",
-    "@types/node": "^24.7.0",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1",
+    "@types/node": "^24.5.2",
+    "@types/swagger-ui-express": "^4.1.8",
+    "@typescript-eslint/eslint-plugin": "^8.44.0",
+    "@typescript-eslint/parser": "^8.44.0",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.6.2",
+    "prisma": "^6.16.2",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.9.3"
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "zod": "^4.1.12"
   }
 }
