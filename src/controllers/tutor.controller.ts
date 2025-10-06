@@ -57,19 +57,25 @@ const tutorController = {
         }
     },
 
-  delete: async (req: Request, res: Response) => {
+ delete: async (req: Request, res: Response) => { 
         try {
-            const data = deleteTutorSchema.parse({
-                id: Number(req.params.id),
-                tutorId: Number(req.body.tutorId),
-            });
+            const tutorId = Number(req.params.Id);
+            const gerenteId = Number(req.query.gerenteId);
 
-            await tutorService.delete(data.id);
-            res.json({ message: "Tutor deletado com sucesso" });
+            const data = deleteTutorSchema.parse({ tutorId, gerenteId });
+
+            const podeDeletar = await tutorService.canGerenteDelete(data.gerenteId);
+            if (!podeDeletar) {
+                return res.status(403).json({ error: "Apenas gerentes podem deletar tutores" });
+            }
+
+            await tutorService.delete(data.tutorId);
+            res.json({ message: "Veterinário deletado com sucesso" });
+
         } catch (error) {
             return res.status(400).json({ erros: formatZodError(error) });
         }
     },
-};
+}
 
 export default tutorController;
