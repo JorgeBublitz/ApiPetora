@@ -13,19 +13,7 @@ export const createGerenteSchema = z.object({
         .regex(/[!@#$%^&*(),.?\":{}|<>]/, "A senha deve conter pelo menos um caractere especial"),
 });
 // 📘 Schema de atualização
-export const updateGerenteSchema = z.object({
-    nome: z.string()
-        .min(3, "O nome deve ter pelo menos 3 caracteres")
-        .optional(),
-    email: z.string()
-        .email("Email inválido")
-        .optional(),
-    senha: z.string()
-        .min(6, "A senha deve ter no mínimo 6 caracteres")
-        .regex(/\d/, "A senha deve conter pelo menos um número")
-        .regex(/[!@#$%^&*(),.?\":{}|<>]/, "A senha deve conter pelo menos um caractere especial")
-        .optional(),
-});
+export const updateGerenteSchema = createGerenteSchema.partial();
 
 // 📘 Schema de exclusão
 export const deleteGerenteSchema = z.object({

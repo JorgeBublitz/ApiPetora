@@ -87,5 +87,5 @@ model Veterinario {
   email         String     @unique
   senha         String
   especialidade String
-  Consulta      Consulta[]
+  consulta      Consulta[]
 }
