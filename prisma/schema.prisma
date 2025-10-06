@@ -18,7 +18,7 @@ model Gerente {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
+ 
 
 // Dono do animal
 model Tutor {
@@ -70,6 +70,8 @@ model Agendamento {
 model Consulta {
   id          Int         @id @default(autoincrement())
   data        DateTime
+  
+  veterinarioId Int
   veterinario Veterinario @relation(fields: [veterinarioId], references: [id])
   descricao   String
   tratamento  String?
@@ -79,7 +81,6 @@ model Consulta {
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  veterinarioId Int
 }
 
 

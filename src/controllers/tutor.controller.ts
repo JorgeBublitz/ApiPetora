@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import tutorService from "../services/tutor.services";
+import tutorService from "../services/tutor.service";
 import {
     createTutorSchema,
     updateTutorSchema,

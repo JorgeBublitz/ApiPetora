@@ -65,7 +65,7 @@ const veterinarioController = {
         }
     },
 
-    delete: async (req: Request, res: Response) => {
+    delete: async (req: Request, res: Response) => { 
         try {
             const veterinarioId = Number(req.params.id);
             const gerenteId = Number(req.query.gerenteId);
