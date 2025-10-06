@@ -1,11 +1,11 @@
 import type { Request, Response } from "express";
-import tutorService from "../services/tutor.service";
+import tutorService from "../services/tutor.services";
 import {
     createTutorSchema,
     updateTutorSchema,
     deleteTutorSchema,
     formatZodError
-} from "../schemas/tutor.scheme"
+} from "../schemas/tutor.schema"
 
 const tutorController = {
     getAll: async (req: Request, res: Response) => {

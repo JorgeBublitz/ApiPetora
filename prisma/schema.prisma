@@ -24,8 +24,8 @@ model Tutor {
   id       Int    @id @default(autoincrement())
   nome     String
   email    String @unique
-  telefone String
-  endereco String
+  telefone String?
+  endereco String?
 
   pets Pet[] // Um tutor pode ter vários pets
 
