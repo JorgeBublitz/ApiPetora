@@ -15,6 +15,7 @@ export const updateTutorSchema = createTutorSchema.partial();
 export const deleteTutorSchema = z.object({
   id: z.number().int("ID inválido"),
   tutorId: z.number().int("ID inválido"),
+  gerenteId: z.number().int("ID inválido"),
   }).refine(data => data.id !== data.tutorId, {
     message: "Um tutor não pode deletar a si mesmo",
     path: ["tutorId"],
