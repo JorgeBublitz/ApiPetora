@@ -8,74 +8,79 @@ import {
 } from "../schemas/tutor.schema"
 
 const tutorController = {
-    getAll: async (req: Request, res: Response) => {
-        try {
-            const tutors = await tutorService.getAll();
-            res.json(tutors);
-        } catch (err: any) {
-            res.status(500).json({ error: err.message });
-        }
-    },
+  getAll: async (req: Request, res: Response) => {
+      try {
+          const tutors = await tutorService.getAll();
+          res.json(tutors);
+      } catch (err: any) {
+          res.status(500).json({ error: err.message });
+      }
+  },
 
   getById: async (req: Request, res: Response) => {
-        try {
-            const id = Number(req.params.id);
-            const tutor = await tutorService.getById(id);
+      try {
+          const id = Number(req.params.id);
+          const tutor = await tutorService.getById(id);
 
-            if (!tutor)
-                return res.status(404).json({ error: "Tutor não encontrado" });
+          if (!tutor)
+              return res.status(404).json({ error: "Tutor não encontrado" });
 
-            res.json(tutor);
-        } catch (err: any) {
-            res.status(500).json({ error: err.message });
-        }
-    },
+          res.json(tutor);
+      } catch (err: any) {
+          res.status(500).json({ error: err.message });
+      }
+  },
 
   create: async (req: Request, res: Response) => {
-        try {
-            const data = createTutorSchema.parse(req.body);
-            const newTutor = await tutorService.create(data);
+      try {
+          const data = createTutorSchema.parse(req.body);
+          const newTutor = await tutorService.create(data);
 
-            res.status(201).json({
-                message: "Tutor criado com sucesso",
-                data: newTutor,
-            });
-        } catch (error) {
-            return res.status(400).json({ erros: formatZodError(error) });
-        }
-    },
+          res.status(201).json({
+              message: "Tutor criado com sucesso",
+              data: newTutor,
+          });
+      } catch (error) {
+          res.status(400).json({ erros: formatZodError(error) });
+      }
+  },
 
-   update: async (req: Request, res: Response) => {
-        try {
-            const id = Number(req.params.id);
-            const data = updateTutorSchema.parse(req.body);
+  update: async (req: Request, res: Response) => {
+      try {
+          const id = Number(req.params.id);
+          const data = updateTutorSchema.parse(req.body);
 
-            const updatedTutor= await tutorService.update(id, data);
-            res.json(updatedTutor);
-        } catch (error) {
-            return res.status(400).json({ erros: formatZodError(error) });
-        }
-    },
+          const updatedTutor = await tutorService.update(id, data);
+          res.json(updatedTutor);
+      } catch (error) {
+          res.status(400).json({ erros: formatZodError(error) });
+      }
+  },
 
- delete: async (req: Request, res: Response) => { 
-        try {
-            const tutorId = Number(req.params.Id);
-            const gerenteId = Number(req.query.gerenteId);
+  delete: async (req: Request, res: Response) => {
+    try {
+        const tutorId = Number(req.params.id);
+        const gerenteId = Number(req.query.gerenteId);
 
-            const data = deleteTutorSchema.parse({ tutorId, gerenteId });
+        const data = deleteTutorSchema.parse({ tutorId, gerenteId });
 
-            const podeDeletar = await tutorService.canGerenteDelete(data.gerenteId);
-            if (!podeDeletar) {
-                return res.status(403).json({ error: "Apenas gerentes podem deletar tutores" });
-            }
+        // Verifica se o gerente existe
+        const canDelete = await tutorService.canGerenteDelete(data.gerenteId);
+        if (!canDelete) 
+            return res.status(403).json({ error: "Gerente não autorizado ou não encontrado" });
 
-            await tutorService.delete(data.tutorId);
-            res.json({ message: "Veterinário deletado com sucesso" });
+        // Verifica se o tutor existe
+        const tutor = await tutorService.getById(data.tutorId);
+        if (!tutor)
+            return res.status(404).json({ error: "Tutor não encontrado" });
 
-        } catch (error) {
-            return res.status(400).json({ erros: formatZodError(error) });
-        }
-    },
-}
+        // Deleta o tutor
+        await tutorService.delete(data.tutorId);
+        res.json({ message: "Tutor deletado com sucesso" });
 
+    } catch (err: any) {
+        res.status(400).json({ errors: formatZodError(err) });
+    }
+},
+};
 export default tutorController;

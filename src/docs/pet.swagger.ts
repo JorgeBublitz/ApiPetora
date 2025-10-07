@@ -71,20 +71,10 @@
  *               dataNascimento:
  *                 type: string
  *                 format: date
- *                 example: "2021-05-12"
+ *                 example: "2018-05-10"
  *               tutorId:
  *                 type: integer
  *                 example: 1
- *               agendamentoIds:
- *                 type: array
- *                 items:
- *                   type: integer
- *                 example: [2, 5]
- *               consultaIds:
- *                 type: array
- *                 items:
- *                   type: integer
- *                 example: [3]
  *     responses:
  *       201:
  *         description: Pet criado com sucesso
@@ -125,12 +115,12 @@
  *                 type: string
  *                 format: date
  *                 example: "2020-08-10"
- *               agendamentoIds:
+ *               agendamentos:
  *                 type: array
  *                 items:
  *                   type: integer
  *                 example: [1, 4]
- *               consultaIds:
+ *               consultas:
  *                 type: array
  *                 items:
  *                   type: integer

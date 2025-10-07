@@ -14,6 +14,12 @@
  *     responses:
  *       200:
  *         description: Lista de agendamentos retornada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Agendamento'
  *       500:
  *         description: Erro interno do servidor
  */
@@ -34,6 +40,10 @@
  *     responses:
  *       200:
  *         description: Agendamento encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Agendamento'
  *       404:
  *         description: Agendamento não encontrado
  *       500:
@@ -73,6 +83,10 @@
  *     responses:
  *       201:
  *         description: Agendamento criado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Agendamento'
  *       400:
  *         description: Erro de validação dos dados enviados
  */
@@ -107,9 +121,16 @@
  *               observacao:
  *                 type: string
  *                 example: "Paciente em jejum"
+ *               petId:
+ *                 type: integer
+ *                 example: 3
  *     responses:
  *       200:
  *         description: Agendamento atualizado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Agendamento'
  *       400:
  *         description: Erro de validação
  *       404:
@@ -151,4 +172,35 @@
  *         description: Agendamento não encontrado
  *       400:
  *         description: Erro de validação
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Agendamento:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 1
+ *         data:
+ *           type: string
+ *           format: date-time
+ *           example: "2025-10-12T14:30:00Z"
+ *         servico:
+ *           type: string
+ *           example: "Banho e Tosa"
+ *         observacao:
+ *           type: string
+ *           example: "Usar shampoo hipoalergênico"
+ *         petId:
+ *           type: integer
+ *           example: 3
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
  */

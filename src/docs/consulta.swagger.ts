@@ -14,6 +14,12 @@
  *     responses:
  *       200:
  *         description: Lista de consultas retornada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Consulta'
  *       500:
  *         description: Erro interno do servidor
  */
@@ -34,6 +40,10 @@
  *     responses:
  *       200:
  *         description: Consulta encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Consulta'
  *       404:
  *         description: Consulta não encontrada
  *       500:
@@ -54,20 +64,20 @@
  *             type: object
  *             required:
  *               - data
- *               - servico
- *               - petId
  *               - veterinarioId
+ *               - descricao
+ *               - petId
  *             properties:
  *               data:
  *                 type: string
  *                 format: date-time
  *                 example: "2025-10-20T15:30:00Z"
- *               servico:
+ *               descricao:
  *                 type: string
  *                 example: "Consulta de rotina"
- *               observacao:
+ *               tratamento:
  *                 type: string
- *                 example: "Animal vacinado recentemente"
+ *                 example: "Prescrição de antibiótico"
  *               petId:
  *                 type: integer
  *                 example: 2
@@ -105,12 +115,18 @@
  *                 type: string
  *                 format: date-time
  *                 example: "2025-10-22T09:00:00Z"
- *               servico:
+ *               descricao:
  *                 type: string
  *                 example: "Revisão pós-operatória"
- *               observacao:
+ *               tratamento:
  *                 type: string
- *                 example: "Animal em recuperação"
+ *                 example: "Continuação da medicação"
+ *               petId:
+ *                 type: integer
+ *                 example: 2
+ *               veterinarioId:
+ *                 type: integer
+ *                 example: 1
  *     responses:
  *       200:
  *         description: Consulta atualizada com sucesso
@@ -156,3 +172,32 @@
  *       400:
  *         description: Erro de validação
  */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Consulta:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         data:
+ *           type: string
+ *           format: date-time
+ *         descricao:
+ *           type: string
+ *         tratamento:
+ *           type: string
+ *         veterinarioId:
+ *           type: integer
+ *         petId:
+ *           type: integer
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ */
+
