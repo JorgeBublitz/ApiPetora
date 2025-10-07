@@ -26,8 +26,8 @@ router.get("", (_req, res) => {
 router.use("/gerente", gerenteRoutes);
 router.use("/veterinario", veterinarioRoutes);
 router.use("/tutor", tutorRoutes);
-router.use("/pets", petRoutes);
-router.use("/consultas", consultaRoutes);
-router.use("/agendamentos", agendamentoRoutes);
+router.use("/pet", petRoutes);
+router.use("/consulta", consultaRoutes);
+router.use("/agendamento", agendamentoRoutes);
 
 export default router;
