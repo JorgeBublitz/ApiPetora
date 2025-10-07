@@ -1,6 +1,7 @@
 // Arquivo: prisma/seed.ts
 
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
@@ -10,7 +11,7 @@ async function main() {
         data: {
             nome: "Alice Silva",
             email: "alice@admin.com",
-            senha: "senha1234",
+            senha: await bcrypt.hash("senha1234", 10),
         },
     });
 
@@ -18,7 +19,7 @@ async function main() {
         data: {
             nome: "Bruno Costa",
             email: "bruno@admin.com",
-            senha: "senha5678",
+            senha: await bcrypt.hash("senha5678", 10),
         },
     });
 
@@ -67,7 +68,7 @@ async function main() {
         data: {
             nome: "Dra. Fernanda",
             email: "fernanda@vet.com",
-            senha: "vet1234",
+            senha: await bcrypt.hash("vet5678", 10),
             especialidade: "Cardiologia",
         },
     });
@@ -76,7 +77,7 @@ async function main() {
         data: {
             nome: "Dr. Ricardo",
             email: "ricardo@vet.com",
-            senha: "vet5678",
+            senha: await bcrypt.hash("vet1234", 10),
             especialidade: "Dermatologia",
         },
     });

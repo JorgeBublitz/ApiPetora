@@ -7,7 +7,7 @@ const options = {
         openapi: "3.0.0",
         info: {
             title: "API PetShop",
-            version: "1.0.0",
+            version: "1.1.0",
             description: "📘 Documentação da API do sistema PetShop 🐾",
         },
         servers: [
@@ -17,11 +17,10 @@ const options = {
             },
         ],
     },
-    // 👇 Aqui ficam todos os lugares onde o swagger vai procurar as anotações
     apis: [
         "./src/routes/*.ts",
         "./src/controllers/*.ts",
-        "./src/docs/*.ts", // 👈 se for usar arquivos separados de documentação
+        "./src/docs/gerente.swagger.ts",
     ],
 };
 

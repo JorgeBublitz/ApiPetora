@@ -58,7 +58,7 @@
  *                 example: "joao@email.com"
  *               senha:
  *                 type: string
- *                 example: "123456"
+ *                 example: "Abc@1234"
  *     responses:
  *       201:
  *         description: Gerente criado
@@ -93,7 +93,7 @@
  *                 example: "joao.atualizado@email.com"
  *               senha:
  *                 type: string
- *                 example: "novaSenha123"
+ *                 example: "nova@Senha123"
  *     responses:
  *       200:
  *         description: Gerente atualizado com sucesso
@@ -103,6 +103,7 @@
  *         description: Gerente não encontrado
  */
 
+/**
 /**
  * @swagger
  * /gerente/{id}:
@@ -116,21 +117,19 @@
  *         schema:
  *           type: integer
  *           example: 1
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               gerenteId:
- *                 type: integer
- *                 example: 1
+ *         description: ID do gerente a ser deletado
+ *       - in: query
+ *         name: gerenteId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 2c
+ *         description: ID do gerente que está executando a ação
  *     responses:
  *       200:
  *         description: Gerente deletado com sucesso
  *       400:
- *         description: Erro de validação
+ *         description: Erro de validação ou tentativa de deletar a si mesmo
  *       404:
- *         description: Gerente não encontrado
+ *         description: Gerente a ser deletado não encontrado
  */
