@@ -1,25 +1,50 @@
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import { Request, Response, NextFunction } from 'express';
+import { JwtUtil } from '../utils/jwt.util';
+import { JwtPayload } from '../types/jwt.types';
 
-const SECRET = process.env.JWT_SECRET || "segredo_super_secreto";
-
-interface AuthRequest extends Request {
-  user?: { id: number; email: string };
+// Estender o tipo Request do Express para incluir o usuário autenticado
+declare global {
+  namespace Express {
+    interface Request {
+      gerente?: JwtPayload;
+    }
+  }
 }
 
-export function autenticarToken(req: AuthRequest, res: Response, next: NextFunction) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader?.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ erro: "Token de acesso não fornecido" });
-  }
-
+/**
+ * Middleware para verificar a autenticação via JWT
+ * Espera o token no header Authorization no formato: "Bearer <token>"
+ */
+export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   try {
-    const payload = jwt.verify(token, SECRET) as { id: number; email: string };
-    req.user = payload;
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      res.status(401).json({ error: 'Token não fornecido' });
+      return;
+    }
+
+    const parts = authHeader.split(' ');
+
+    if (parts.length !== 2) {
+      res.status(401).json({ error: 'Formato de token inválido' });
+      return;
+    }
+
+    const [scheme, token] = parts;
+
+    if (!/^Bearer$/i.test(scheme!)) {
+      res.status(401).json({ error: 'Token mal formatado' });
+      return;
+    }
+
+    const payload = JwtUtil.verifyAccessToken(token!);
+    req.gerente = payload;
+
     next();
-  } catch {
-    return res.status(403).json({ erro: "Token inválido ou expirado" });
+  } catch (error) {
+    res.status(401).json({ error: 'Token inválido ou expirado' });
+    return;
   }
-}
+};
+

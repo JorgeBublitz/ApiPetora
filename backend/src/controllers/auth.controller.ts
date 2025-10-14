@@ -1,65 +1,116 @@
-import { Request, Response } from "express";
-import { authService } from "../services/auth.service";
+import { Request, Response } from 'express';
+import { AuthService } from '../services/auth.service';
+import { RegisterInput, LoginInput, RefreshTokenInput } from '../utils/validation.schemas';
 
-export const authController = {
-    // 🔐 LOGIN
-    login: async (req: Request, res: Response) => {
-        try {
-            const { email, senha } = req.body;
+export class AuthController {
+  /**
+   * POST /auth/register
+   * Registra um novo usuário
+   */
+  static async register(req: Request, res: Response): Promise<void> {
+    try {
+      const data: RegisterInput = req.body;
+      const tokens = await AuthService.register(data);
 
-            if (!email || !senha) {
-                return res.status(400).json({ erro: "Email e senha são obrigatórios" });
-            }
+      res.status(201).json({
+        message: 'Usuário registrado com sucesso',
+        data: tokens,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: 'Erro interno do servidor' });
+      }
+    }
+  }
 
-            const resultado = await authService.login(email, senha);
+  /**
+   * POST /auth/login
+   * Realiza o login do usuário
+   */
+  static async login(req: Request, res: Response): Promise<void> {
+    try {
+      const data: LoginInput = req.body;
+      const tokens = await AuthService.login(data);
 
-            if (!resultado) {
-                return res.status(401).json({ erro: "Credenciais inválidas" });
-            }
+      res.status(200).json({
+        message: 'Login realizado com sucesso',
+        data: tokens,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(401).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: 'Erro interno do servidor' });
+      }
+    }
+  }
 
-            return res.status(200).json(resultado);
-        } catch (erro) {
-            console.error("Erro no login:", erro);
-            return res.status(500).json({ erro: "Erro interno no servidor" });
-        }
-    },
+  /**
+   * POST /auth/refresh
+   * Renova o access token usando um refresh token
+   */
+  static async refresh(req: Request, res: Response): Promise<void> {
+    try {
+      const { refreshToken }: RefreshTokenInput = req.body;
+      const tokens = await AuthService.refreshAccessToken(refreshToken);
 
-    // 🔄 REFRESH TOKEN
-    refresh: async (req: Request, res: Response) => {
-        try {
-            const token = req.headers["x-refresh-token"] as string; // 👈 token via header
+      res.status(200).json({
+        message: 'Token renovado com sucesso',
+        data: tokens,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(401).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: 'Erro interno do servidor' });
+      }
+    }
+  }
 
-            if (!token) {
-                return res.status(400).json({ erro: "Refresh token não fornecido" });
-            }
+  /**
+   * POST /auth/logout
+   * Realiza o logout do usuário
+   */
+  static async logout(req: Request, res: Response): Promise<void> {
+    try {
+      const { refreshToken }: RefreshTokenInput = req.body;
+      await AuthService.logout(refreshToken);
 
-            const novoToken = await authService.refreshToken(token);
+      res.status(200).json({
+        message: 'Logout realizado com sucesso',
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: 'Erro interno do servidor' });
+      }
+    }
+  }
 
-            if (!novoToken) {
-                return res.status(401).json({ erro: "Refresh token inválido ou expirado" });
-            }
+  /**
+   * GET /auth/me
+   * Retorna os dados do usuário autenticado
+   */
+  static async me(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.gerente) {
+        res.status(401).json({ error: 'Não autenticado' });
+        return;
+      }
 
-            return res.status(200).json(novoToken);
-        } catch (erro) {
-            console.error("Erro ao renovar token:", erro);
-            return res.status(500).json({ erro: "Erro interno no servidor" });
-        }
-    },
+      res.status(200).json({
+        message: 'Usuário autenticado',
+        data: {
+          userId: req.gerente.gerenteId,
+          email: req.gerente.email,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+}
 
-    // 🚪 LOGOUT
-    logout: async (req: Request, res: Response) => {
-        try {
-            const token = req.headers["x-refresh-token"] as string;
-
-            if (!token) {
-                return res.status(400).json({ erro: "Refresh token não fornecido" });
-            }
-
-            await authService.logout(token);
-            return res.status(200).json({ mensagem: "Logout realizado com sucesso" });
-        } catch (erro) {
-            console.error("Erro no logout:", erro);
-            return res.status(500).json({ erro: "Erro interno no servidor" });
-        }
-    },
-};

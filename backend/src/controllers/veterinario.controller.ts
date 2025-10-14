@@ -5,7 +5,7 @@ import {
     updateVeterinarioSchema,
     deleteVeterinarioSchema,
     formatZodError,
-} from "../schemas/veterinario.schema"
+} from "../utils/schemas/veterinario.schema"
 
 
 

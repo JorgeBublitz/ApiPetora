@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import petService from "../services/pet.service";
-import { createPetSchema, updatePetSchema, deletePetSchema, formatZodError } from "../schemas/pet.schema";
+import { createPetSchema, updatePetSchema, deletePetSchema, formatZodError } from "../utils/schemas/pet.schema";
 
 const petController = {
     getAll: async (_req: Request, res: Response) => {

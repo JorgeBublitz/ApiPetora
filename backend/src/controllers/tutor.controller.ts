@@ -5,7 +5,7 @@ import {
     updateTutorSchema,
     deleteTutorSchema,
     formatZodError
-} from "../schemas/tutor.schema"
+} from "../utils/schemas/tutor.schema"
 
 const tutorController = {
   getAll: async (req: Request, res: Response) => {

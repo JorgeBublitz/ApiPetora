@@ -11,7 +11,7 @@ async function main() {
         data: {
             nome: "admin",
             email: "admin@gmail.com",
-            senha: await bcrypt.hash("1234", 10),
+            password: await bcrypt.hash("1234", 10),
         },
     });
 
@@ -19,7 +19,7 @@ async function main() {
         data: {
             nome: "Bruno Costa",
             email: "bruno@admin.com",
-            senha: await bcrypt.hash("senha5678", 10),
+            password: await bcrypt.hash("senha5678", 10),
         },
     });
 

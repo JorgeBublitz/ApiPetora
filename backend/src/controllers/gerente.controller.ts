@@ -6,7 +6,7 @@ import {
     deleteGerenteSchema,
     getGerenteSchema,
     formatZodError,
-} from "../schemas/gerente.schema";
+} from "../utils/schemas/gerente.schema";
 
 const gerenteController = {
     /* 📘 Buscar todos */

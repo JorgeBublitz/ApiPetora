@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import consultaService from "../services/consulta.service";
-import { createConsultaSchema, updateConsultaSchema, deleteConsultaSchema, formatZodError } from "../schemas/consulta.schema";
+import { createConsultaSchema, updateConsultaSchema, deleteConsultaSchema, formatZodError } from "../utils/schemas/consulta.schema";
 
 const consultaController = {
     getAll: async (_req: Request, res: Response) => {

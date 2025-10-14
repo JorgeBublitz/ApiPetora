@@ -23,7 +23,6 @@ const consultaService = {
     create: (data: createConsultaInput) => prisma.consulta.create({ data }),
     update: (id: number, data: updateConsultaInput) => prisma.consulta.update({ where: { id }, data }),
     delete: (id: number) => prisma.consulta.delete({ where: { id } }),
-    canGerenteDelete: async (gerenteId: number) => !!(await prisma.gerente.findUnique({ where: { id: gerenteId } }))
 };
 
 

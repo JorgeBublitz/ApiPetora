@@ -1,9 +1,9 @@
 -- CreateTable
 CREATE TABLE "Gerente" (
-    "id" SERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "nome" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "senha" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -11,12 +11,23 @@ CREATE TABLE "Gerente" (
 );
 
 -- CreateTable
+CREATE TABLE "RefreshToken" (
+    "id" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "gerenteId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "RefreshToken_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Tutor" (
     "id" SERIAL NOT NULL,
     "nome" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "telefone" TEXT NOT NULL,
-    "endereco" TEXT NOT NULL,
+    "telefone" TEXT,
+    "endereco" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -54,12 +65,12 @@ CREATE TABLE "Agendamento" (
 CREATE TABLE "Consulta" (
     "id" SERIAL NOT NULL,
     "data" TIMESTAMP(3) NOT NULL,
+    "veterinarioId" INTEGER NOT NULL,
     "descricao" TEXT NOT NULL,
     "tratamento" TEXT,
     "petId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "veterinarioId" INTEGER NOT NULL,
 
     CONSTRAINT "Consulta_pkey" PRIMARY KEY ("id")
 );
@@ -79,10 +90,16 @@ CREATE TABLE "Veterinario" (
 CREATE UNIQUE INDEX "Gerente_email_key" ON "Gerente"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "RefreshToken_token_key" ON "RefreshToken"("token");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Tutor_email_key" ON "Tutor"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Veterinario_email_key" ON "Veterinario"("email");
+
+-- AddForeignKey
+ALTER TABLE "RefreshToken" ADD CONSTRAINT "RefreshToken_gerenteId_fkey" FOREIGN KEY ("gerenteId") REFERENCES "Gerente"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Pet" ADD CONSTRAINT "Pet_tutorId_fkey" FOREIGN KEY ("tutorId") REFERENCES "Tutor"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import agendamentoService from "../services/agendamento.service";
-import { createAgendamentoSchema, updateAgendamentoSchema, deleteAgendamentoSchema, formatZodError } from "../schemas/agendamento.schema";
+import { createAgendamentoSchema, updateAgendamentoSchema, deleteAgendamentoSchema, formatZodError } from "../utils/schemas/agendamento.schema";
 
 const agendamentoController = {
     getAll: async (_req: Request, res: Response) => {

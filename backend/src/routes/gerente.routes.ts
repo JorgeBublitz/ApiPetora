@@ -1,6 +1,9 @@
 import { Router } from "express";
 import gerenteController from "../controllers/gerente.controller";
-import { autenticarToken } from "../middlewares/auth.middleware";
+import { authMiddleware } from "../middlewares/auth.middleware";
+import { validate } from "../middlewares/validate.middleware";
+import { createGerenteSchema, updateGerenteSchema, deleteGerenteSchema } from "../utils/schemas/gerente.schema";
+
 
 const router = Router();
 
@@ -9,8 +12,8 @@ router.get("/", gerenteController.getAll);
 router.get("/:id", gerenteController.getById);
 
 // rotas protegidas (precisam de JWT válido)
-router.post("/", autenticarToken, gerenteController.create);
-router.put("/:id", autenticarToken, gerenteController.update);
-router.delete("/:id", autenticarToken, gerenteController.delete);
+router.post("/",authMiddleware, validate(createGerenteSchema), gerenteController.create);
+router.put("/:id", authMiddleware, validate(updateGerenteSchema), gerenteController.update);
+router.delete("/:id", authMiddleware, validate(deleteGerenteSchema), gerenteController.delete);
 
 export default router;
