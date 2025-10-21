@@ -1,3 +1,4 @@
+import { validate } from './../middlewares/validate.middleware';
 import type { Request, Response } from "express";
 import gerenteService from "../services/gerente.service";
 import {
@@ -5,8 +6,11 @@ import {
     updateGerenteSchema,
     deleteGerenteSchema,
     getGerenteSchema,
+    getGerenteByNameSchema,
+    getGerenteByEmailSchema,
     formatZodError,
 } from "../utils/schemas/gerente.schema";
+import { get } from "http";
 
 const gerenteController = {
     /* 📘 Buscar todos */
@@ -32,6 +36,38 @@ const gerenteController = {
         try {
             const gerente = await gerenteService.getById(validation.data.id);
             if (!gerente) return res.status(404).json({ error: "Gerente não encontrado." });
+            return res.status(200).json(gerente);
+        } catch (err: any) {
+            return res.status(500).json({ error: "Erro interno do servidor.", detalhe: err.message });
+        }
+    },
+
+    getByName: async (req: Request, res: Response) => {
+        const validation = getGerenteByNameSchema.safeParse({ nome: req.query.nome });
+        if (!validation.success) {
+            return res.status(400).json({ erros: formatZodError(validation.error) });
+        }
+        try {
+            const gerentes = await gerenteService.getByName(validation.data.nome);
+            if (gerentes.length === 0) {
+                return res.status(404).json({ message: "Nenhum gerente encontrado com esse nome." });
+            }
+            return res.status(200).json(gerentes);
+        } catch (err: any) {
+            return res.status(500).json({ error: "Erro interno do servidor.", detalhe: err.message });
+        }
+    },
+
+    getByEmail: async (req: Request, res: Response) => {
+        const validation = getGerenteByEmailSchema.safeParse({ email: req.query.email });
+        if (!validation.success) {
+            return res.status(400).json({ erros: formatZodError(validation.error) });
+        }
+        try {
+            const gerente = await gerenteService.getByEmail(validation.data.email);
+            if (!gerente) {
+                return res.status(404).json({ message: "Nenhum gerente encontrado com esse e-mail." });
+            }
             return res.status(200).json(gerente);
         } catch (err: any) {
             return res.status(500).json({ error: "Erro interno do servidor.", detalhe: err.message });

@@ -64,10 +64,6 @@ const petController = {
                 petId: Number(req.params.id),
                 solicitanteId: Number(req.body.solicitanteId)
             });
-
-            const canDelete = await petService.canGerenteDelete(data.solicitanteId);
-            if (!canDelete) return res.status(403).json({ error: "Não autorizado" });
-
             await petService.delete(data.petId);
             res.json({ message: "Pet deletado com sucesso" });
         } catch (err) {

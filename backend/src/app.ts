@@ -1,10 +1,13 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
+const cors = require("cors");
 import swaggerUi from 'swagger-ui-express';
 import { swaggerDocument } from './config/swagger';
 import routes from './routes';
 
 const app: Application = express();
 
+// permite qualquer origem
+app.use(cors());
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

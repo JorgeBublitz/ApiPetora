@@ -42,10 +42,6 @@ const petService = {
             },
         }),
     delete: (id: number) => prisma.pet.delete({ where: { id } }),
-    canGerenteDelete: async (gerenteId: number) => {
-        const gerente = await prisma.gerente.findUnique({ where: { id: gerenteId } });
-        return !!gerente;
-    },
 };
 
 export default petService;

@@ -10,9 +10,11 @@ const router = Router();
 // rotas públicas
 router.get("/", gerenteController.getAll);
 router.get("/:id", gerenteController.getById);
+router.get("/search/by-name", gerenteController.getByName);
+router.get("/search/by-email", gerenteController.getByEmail);
 
 // rotas protegidas (precisam de JWT válido)
-router.post("/",authMiddleware, validate(createGerenteSchema), gerenteController.create);
+router.post("/", authMiddleware, validate(createGerenteSchema), gerenteController.create);
 router.put("/:id", authMiddleware, validate(updateGerenteSchema), gerenteController.update);
 router.delete("/:id", authMiddleware, validate(deleteGerenteSchema), gerenteController.delete);
 

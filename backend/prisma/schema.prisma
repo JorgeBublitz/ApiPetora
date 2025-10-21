@@ -11,22 +11,22 @@ datasource db {
 
 // Gerente do sistema (para login, etc.)
 model Gerente {
-   id            String         @id @default(uuid())
+  id           String         @id @default(uuid())
   nome         String
   email        String         @unique
-  password        String
+  password     String
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   RefreshToken RefreshToken[]
 }
 
 model RefreshToken {
-  id         String   @id @default(uuid())
-  token      String @unique
-  gerenteId  String
-  gerente    Gerente     @relation(fields: [gerenteId], references: [id])
-  createdAt  DateTime @default(now())
-  expiresAt  DateTime
+  id        String   @id @default(uuid())
+  token     String   @unique
+  gerenteId String
+  gerente   Gerente  @relation(fields: [gerenteId], references: [id])
+  createdAt DateTime @default(now())
+  expiresAt DateTime
 }
 
 // Dono do animal

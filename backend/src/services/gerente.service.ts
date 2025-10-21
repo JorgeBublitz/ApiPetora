@@ -1,3 +1,4 @@
+import { get } from "http";
 import prisma from "../db/prismaClient";
 import bcrypt from "bcrypt";
 
@@ -11,17 +12,21 @@ type updateGerenteInput = Partial<createGerenteInput>;
 
 const gerenteService = {
     getAll: () => prisma.gerente.findMany(),
-    getById: (id: number) => prisma.gerente.findUnique({ where: { id } }),
+    getById: (id: string) => prisma.gerente.findUnique({ where: { id } }),
+
+    getByEmail: (email: string) => prisma.gerente.findUnique({ where: { email } }),
+    getByName: (nome: string) => prisma.gerente.findMany({ where: { nome: { contains: nome, mode: "insensitive" } } }),
+
     create: async (data: createGerenteInput) => {
         const hashedPassword = await bcrypt.hash(data.senha, 10);
         return prisma.gerente.create({
             data: {
                 ...data,
-                senha: hashedPassword,
+                password: hashedPassword,
             }
         })
     },
-    update: async (id: number, data: updateGerenteInput) => {
+    update: async (id: string, data: updateGerenteInput) => {
         if (data.email) {
             const existing = await prisma.gerente.findUnique({ where: { email: data.email } });
             if (existing && existing.id !== id) {
@@ -36,7 +41,7 @@ const gerenteService = {
             data,
         });
     },
-    delete: async (id: number) => {
+    delete: async (id: string) => {
         const gerente = await prisma.gerente.findUnique({ where: { id } });
         if (!gerente) {
             throw new Error("Gerente não encontrado");

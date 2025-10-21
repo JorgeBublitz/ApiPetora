@@ -62,10 +62,6 @@ const agendamentoController = {
                 agendamentoId: Number(req.params.id),
                 solicitanteId: Number(req.body.solicitanteId)
             });
-
-            const canDelete = await agendamentoService.canGerenteDelete(data.solicitanteId);
-            if (!canDelete) return res.status(403).json({ error: "Não autorizado" });
-
             await agendamentoService.delete(data.agendamentoId);
             res.json({ message: "Agendamento deletado com sucesso" });
         } catch (err) {

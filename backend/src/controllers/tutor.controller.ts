@@ -63,12 +63,7 @@ const tutorController = {
         const gerenteId = Number(req.query.gerenteId);
 
         const data = deleteTutorSchema.parse({ tutorId, gerenteId });
-
-        // Verifica se o gerente existe
-        const canDelete = await tutorService.canGerenteDelete(data.gerenteId);
-        if (!canDelete) 
-            return res.status(403).json({ error: "Gerente não autorizado ou não encontrado" });
-
+        
         // Verifica se o tutor existe
         const tutor = await tutorService.getById(data.tutorId);
         if (!tutor)

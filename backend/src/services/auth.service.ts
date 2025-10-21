@@ -7,7 +7,7 @@ import { RegisterInput, LoginInput } from '../utils/validation.schemas';
 export class AuthService {
 
   // Realiza o cadastro do usuário
-  static async register(data: RegisterInput): Promise<TokenPair> {
+  static async register(data: RegisterInput): Promise<void> {
     const existingGerente = await prisma.gerente.findUnique({
       where: { email: data.email },
     });
@@ -15,10 +15,9 @@ export class AuthService {
     if (existingGerente) {
       throw new Error('Email já está em uso');
     }
-    
+
     const hashedPassword = await HashUtil.hashPassword(data.password);
 
-    // Criar usuário
     const gerente = await prisma.gerente.create({
       data: {
         email: data.email,
@@ -26,22 +25,10 @@ export class AuthService {
         nome: data.name,
       },
     });
-
-    // Gerar tokens
-    const payload = { gerenteId: gerente.id.toString(), email: gerente.email };
-    const accessToken = JwtUtil.generateAccessToken(payload);
-    const refreshToken = JwtUtil.generateRefreshToken(payload);
-
-    // Salvar refresh token no banco
-    await prisma.refreshToken.create({
-      data: {
-        token: refreshToken,
-        gerenteId: gerente.id,
-        expiresAt: JwtUtil.getRefreshTokenExpirationDate(),
-      },
-    });
-
-    return { accessToken, refreshToken };
+    
+    if (!gerente) {
+      throw new Error('Erro ao registrar usuário');
+    }
   }
 
   // Realiza o login do usuário
@@ -52,14 +39,14 @@ export class AuthService {
     });
 
     if (!gerente) {
-      throw new Error('Credenciais inválidas');
+      throw new Error('Email não cadastrado');
     }
 
     // Verificar senha
     const isPasswordValid = await HashUtil.comparePassword(data.password, gerente.password);
 
     if (!isPasswordValid) {
-      throw new Error('Credenciais inválidas');
+      throw new Error('Senha incorreta');
     }
     // Gerar tokens
     const payload = { gerenteId: gerente.id.toString(), email: gerente.email };
@@ -81,6 +68,9 @@ export class AuthService {
   static async refreshAccessToken(refreshToken: string): Promise<TokenPair> {
     // Verificar o refresh token
     const payload = JwtUtil.verifyRefreshToken(refreshToken);
+
+    // 🔥 Remove campos automáticos do JWT pra evitar conflito
+    const { exp, iat, ...cleanPayload } = payload as any;
 
     // Verificar se o refresh token existe no banco e não expirou
     const storedToken = await prisma.refreshToken.findUnique({
@@ -104,22 +94,22 @@ export class AuthService {
       where: { id: storedToken.id },
     });
 
-    // Gerar novos tokens
-    const newAccessToken = JwtUtil.generateAccessToken(payload);
-    const newRefreshToken = JwtUtil.generateRefreshToken(payload);
+    // ✅ Gerar novos tokens com payload limpo
+    const newAccessToken = JwtUtil.generateAccessToken(cleanPayload);
+    const newRefreshToken = JwtUtil.generateRefreshToken(cleanPayload);
 
     // Salvar novo refresh token no banco
     await prisma.refreshToken.create({
       data: {
         token: newRefreshToken,
-        gerenteId: String(payload.gerenteId),
+        gerenteId: String(cleanPayload.gerenteId),
         expiresAt: JwtUtil.getRefreshTokenExpirationDate(),
       },
     });
 
     return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   }
-  
+
   static async logout(refreshToken: string): Promise<void> {
     await prisma.refreshToken.deleteMany({
       where: { token: refreshToken },

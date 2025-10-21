@@ -5,10 +5,13 @@ import { authMiddleware } from '../middlewares/auth.middleware';
 import { registerSchema, loginSchema, refreshTokenSchema } from '../utils/validation.schemas';
 
 const router = Router();
+// rota públicas
 router.post('/register', validate(registerSchema), AuthController.register);
 router.post('/login', validate(loginSchema), AuthController.login);
-router.post('/refresh', validate(refreshTokenSchema), AuthController.refresh);
-router.post('/logout', validate(refreshTokenSchema), AuthController.logout);
+
+// rotas protegidas (precisam de JWT válido)
+router.post('/refresh', authMiddleware, validate(refreshTokenSchema), AuthController.refresh);
+router.post('/logout', authMiddleware, validate(refreshTokenSchema), AuthController.logout);
 router.get('/me', authMiddleware, AuthController.me);
 
 export default router;

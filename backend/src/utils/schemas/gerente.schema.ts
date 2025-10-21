@@ -2,18 +2,8 @@ import { z, ZodError } from "zod";
 
 const idSchema = z
     .string()
-    .nonempty("O ID deve ser preenchido")
-    .refine((val) => !isNaN(Number(val)), {
-        message: "O ID deve ser um número válido",
-    })
-    .transform((val) => Number(val))
-    .refine((val) => Number.isInteger(val), {
-        message: "O ID deve ser um número inteiro",
-    })
-    .refine((val) => val > 0, {
-        message: "O ID deve ser um número positivo",
-    });
-
+    .nonempty("O ID deve ser preenchido"
+    ).uuid("ID inválido");
 
 export const createGerenteSchema = z.object({
     nome: z
@@ -42,6 +32,19 @@ export const getGerenteSchema = z.object({
 });
 
 const gerenteIdSchema = idSchema;
+
+export const getGerenteByNameSchema = z.object({
+    nome: z
+        .string()
+        .nonempty("O nome é obrigatório"),
+});
+
+export const getGerenteByEmailSchema = z.object({
+    email: z
+        .string()
+        .email("Formato de e-mail inválido")
+        .nonempty("O e-mail é obrigatório"),
+});
 
 export const deleteGerenteSchema = z
     .object({

@@ -61,10 +61,6 @@ const consultaController = {
                 consultaId: Number(req.params.id),
                 gerenteId: Number(req.body.gerenteId)
             });
-
-            const canDelete = await consultaService.canGerenteDelete(data.gerenteId);
-            if (!canDelete) return res.status(403).json({ error: "Não autorizado" });
-
             await consultaService.delete(data.consultaId);
             res.json({ message: "Consulta deletada com sucesso" });
         } catch (err) {

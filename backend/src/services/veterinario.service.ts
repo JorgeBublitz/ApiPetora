@@ -36,10 +36,6 @@ const veterinarioService = {
             },
         }),
     delete: (id: number) => prisma.veterinario.delete({ where: { id } }),
-    canGerenteDelete: async (gerenteId: number) => {
-        const gerente = await prisma.gerente.findUnique({ where: { id: gerenteId } });
-        return !!gerente;
-    },
 };
 
 export default veterinarioService;

@@ -72,11 +72,6 @@ const veterinarioController = {
 
             const data = deleteVeterinarioSchema.parse({ veterinarioId, gerenteId });
 
-            const podeDeletar = await veterinarioService.canGerenteDelete(data.gerenteId);
-            if (!podeDeletar) {
-                return res.status(403).json({ error: "Apenas gerentes podem deletar veterinários" });
-            }
-
             await veterinarioService.delete(data.veterinarioId);
             res.json({ message: "Veterinário deletado com sucesso" });
 
