@@ -1,16 +1,23 @@
 // Arquivo: prisma/seed.ts
 
 import { PrismaClient } from "@prisma/client";
+import { hashUtil } from "../utils/hash.util";
 
 const prisma = new PrismaClient();
 
 async function main() {
+    // Senhas são armazenadas com hash (bcrypt)
+    const gerenteSenha = await hashUtil.hash("senha1234");
+    const gerente2Senha = await hashUtil.hash("senha5678");
+    const vetSenha = await hashUtil.hash("vet1234");
+    const vet2Senha = await hashUtil.hash("vet5678");
+
     // ===== Gerentes =====
     const gerente1 = await prisma.gerente.create({
         data: {
             nome: "Alice Silva",
             email: "alice@admin.com",
-            senha: "senha1234",
+            senha: gerenteSenha,
         },
     });
 
@@ -18,7 +25,7 @@ async function main() {
         data: {
             nome: "Bruno Costa",
             email: "bruno@admin.com",
-            senha: "senha5678",
+            senha: gerente2Senha,
         },
     });
 
@@ -67,7 +74,7 @@ async function main() {
         data: {
             nome: "Dra. Fernanda",
             email: "fernanda@vet.com",
-            senha: "vet1234",
+            senha: vetSenha,
             especialidade: "Cardiologia",
         },
     });
@@ -76,7 +83,7 @@ async function main() {
         data: {
             nome: "Dr. Ricardo",
             email: "ricardo@vet.com",
-            senha: "vet5678",
+            senha: vet2Senha,
             especialidade: "Dermatologia",
         },
     });

@@ -1,59 +1,99 @@
-# API Petora
+# 🐾 API Petora
 
-API para gerenciamento de pets, tutores, veterinários, agendamentos e consultas, construída com **Node.js**, **Express** e **Prisma** (PostgreSQL).
+API para gerenciamento de **petshop**: tutores, pets, veterinários, agendamentos e consultas, construída com **Node.js**, **Express** e **Prisma** (PostgreSQL).
 
 ---
 
-## Pré-requisitos
+## ✨ Funcionalidades
 
-Antes de começar, certifique-se de ter instalado:
+| Módulo | Descrição |
+| :--- | :--- |
+| Gerentes | CRUD de gerentes (com senha **hasheada** com bcrypt) |
+| Veterinários | CRUD de veterinários (senha **hasheada**, nunca retornada na API) |
+| Tutores | CRUD de tutores com seus pets |
+| Pets | CRUD de pets (espécie, raça, data de nascimento) |
+| Consultas | Registro de consultas veterinárias |
+| Agendamentos | Agendamento de serviços (banho, tosa, etc.) |
+| Swagger | Documentação interativa em `/api-docs` |
+
+---
+
+## 🛠️ Tecnologias
+
+- **Node.js** + **TypeScript**
+- **Express** 5
+- **Prisma** (PostgreSQL)
+- **Bcrypt** (hash de senhas)
+- **Zod** (validação de schemas)
+- **Helmet** + **Express Rate Limit** (segurança)
+
+---
+
+## ⚙️ Configuração Local
+
+### Pré-requisitos
 
 - 🟢 **Node.js**
-- 📦 **npm** ou **Yarn**
-- 🐘 **PostgreSQL** (ou outro banco compatível)
-- 🧪 **Postman** ou **Insomnia** (opcional, para testar a API)
+- 🐘 **PostgreSQL**
 
----
+### 1. Instalar dependências
 
-## 1. Clonar o repositório
-
-```bash
-git clone https://github.com/seu-usuario/petshop-api.git
-cd petshop-api
-```
-### 2. Instalar dependências
 ```bash
 npm install
 ```
-### 3. Configurar variáveis de ambiente
-Crie um arquivo ```.env``` na raiz do projeto com as seguintes variáveis:
-```bash
-# Banco de dados PostgreSQL
-DATABASE_URL="postgresql://usuario:senha@localhost:5432/nome_do_banco?schema=public"
-```
-Substitua ```usuario, senha e nome_do_banco``` pelas informações do seu banco.
 
-### 4. Configurar o banco de dados
+### 2. Configurar variáveis de ambiente
+
 ```bash
-npx prisma migrate dev --name init
+cp .env.example .env
 ```
-### 5. Rodar a aplicação
+
+Preencha a `DATABASE_URL` com os dados do seu banco.
+
+### 3. Rodar as migrações
+
+```bash
+npm run prisma:migrate
+```
+
+### 4. Rodar a aplicação
+
 ```bash
 npm run dev
 ```
-A aplicação estará rodando em ```http://localhost:3000```.
 
-### 6. Comandos úteis
+A aplicação estará rodando em `http://localhost:3000` (Swagger em `/api-docs`).
+
+### 5. Comandos úteis
+
 ```bash
 # Rodar migrations
 npx prisma migrate dev
 
 # Resetar o banco e rodar seed novamente
 npx prisma migrate reset
-```
-### Tecnologias utilizadas
 
-- Node.js + Express
-- Prisma ORM
-- PostgreSQL
-- TypeScript
+# Rodar o seed manualmente
+npm run prisma:seed
+```
+
+---
+
+## 📡 Endpoints
+
+| Módulo | Rotas |
+| :--- | :--- |
+| Gerente | `/api/gerente` |
+| Veterinário | `/api/veterinario` |
+| Tutor | `/api/tutor` |
+| Pet | `/api/pet` |
+| Consulta | `/api/consulta` |
+| Agendamento | `/api/agendamento` |
+
+Cada rota oferece `GET /`, `GET /:id`, `POST /`, `PUT /:id` e `DELETE /:id`.
+
+---
+
+## 📝 Licença
+
+MIT
