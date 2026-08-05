@@ -1,34 +1,17 @@
-import { z, ZodError } from "zod";
+import { z } from "zod";
 
-// 📘 Schema de criação
+/**
+ * Schema de criação de agendamento.
+ * `data` é convertida automaticamente para `Date` via `z.coerce.date()`.
+ */
 export const createAgendamentoSchema = z.object({
-    data: z
-        .string()
-        .refine(
-            (val) => !isNaN(Date.parse(val)),
-            "Data do agendamento inválida"
-        ),
-    servico: z.string().nonempty("O serviço é obrigatório"),
-    observacao: z.string().optional(),
-    petId: z.number().int("ID do pet inválido"),
+  data: z.coerce.date("Data do agendamento inválida."),
+  servico: z.string().min(1, "O serviço é obrigatório."),
+  observacao: z.string().optional(),
+  petId: z.number().int("ID do pet inválido.").positive("ID do pet deve ser maior que zero."),
 });
 
-// 📘 Schema de atualização (parcial)
+/**
+ * Schema de atualização de agendamento (todos os campos opcionais).
+ */
 export const updateAgendamentoSchema = createAgendamentoSchema.partial();
-
-// 📘 Schema de exclusão
-export const deleteAgendamentoSchema = z.object({
-    agendamentoId: z.number().int("ID do agendamento inválido"),
-    solicitanteId: z.number().int("ID do solicitante inválido"), 
-});
-
-// 📘 Função para formatar erros do Zod de forma bonita
-export function formatZodError(error: unknown) {
-    if (error instanceof ZodError) {
-        return error.issues.map(err => ({
-            campo: err.path.join("."),
-            mensagem: err.message,
-        }));
-    }
-    return [{ campo: "desconhecido", mensagem: "Erro de validação" }];
-}

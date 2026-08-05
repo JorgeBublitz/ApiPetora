@@ -1,4 +1,4 @@
-import express, { Application, Request, Response, NextFunction } from "express";
+import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -6,6 +6,7 @@ import routes from "./routes/index.routes";
 import prisma from "./db/prismaClient";
 import { swaggerDocs } from "./config/swagger";
 import { env } from "./config/env";
+import { errorHandler } from "./middlewares/errorHandler";
 
 const app: Application = express();
 
@@ -45,10 +46,7 @@ app.use((req: Request, res: Response) => {
 });
 
 // Tratamento global de erros
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ error: "Erro interno do servidor" });
-});
+app.use(errorHandler);
 
 const PORT = env.port;
 

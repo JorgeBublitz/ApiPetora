@@ -1,35 +1,18 @@
-import { z, ZodError } from "zod";
+import { z } from "zod";
 
-// 📘 Schema de criação
+/**
+ * Schema de criação de consulta.
+ * `data` é convertida automaticamente para `Date` via `z.coerce.date()`.
+ */
 export const createConsultaSchema = z.object({
-    data: z
-        .string()
-        .refine(
-            (val) => !isNaN(Date.parse(val)),
-            "Data da consulta inválida"
-        ),
-    veterinarioId: z.number().int("ID do veterinário inválido"),
-    descricao: z.string().nonempty("Descrição obrigatória"),
-    tratamento: z.string().optional(),
-    petId: z.number().int("ID do pet inválido"),
+  data: z.coerce.date("Data da consulta inválida."),
+  veterinarioId: z.number().int("ID do veterinário inválido.").positive("ID do veterinário deve ser maior que zero."),
+  descricao: z.string().min(1, "Descrição obrigatória."),
+  tratamento: z.string().optional(),
+  petId: z.number().int("ID do pet inválido.").positive("ID do pet deve ser maior que zero."),
 });
 
-// 📘 Schema de atualização (parcial)
+/**
+ * Schema de atualização de consulta (todos os campos opcionais).
+ */
 export const updateConsultaSchema = createConsultaSchema.partial();
-
-// 📘 Schema de exclusão
-export const deleteConsultaSchema = z.object({
-    consultaId: z.number().int("ID da consulta inválido"),
-    gerenteId: z.number().int("ID do solicitante inválido"),
-});
-
-// 📘 Função para formatar erros do Zod de forma bonita
-export function formatZodError(error: unknown) {
-    if (error instanceof ZodError) {
-        return error.issues.map(err => ({
-            campo: err.path.join("."),
-            mensagem: err.message,
-        }));
-    }
-    return [{ campo: "desconhecido", mensagem: "Erro de validação" }];
-}

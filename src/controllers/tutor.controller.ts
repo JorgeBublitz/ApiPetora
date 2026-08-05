@@ -1,87 +1,9 @@
-import type { Request, Response } from "express";
 import tutorService from "../services/tutor.service";
-import {
-    createTutorSchema,
-    updateTutorSchema,
-    deleteTutorSchema,
-    formatZodError
-} from "../schemas/tutor.schema"
+import { createCrudController } from "./crud.controller";
 
-const tutorController = {
-  getAll: async (req: Request, res: Response) => {
-      try {
-          const tutors = await tutorService.getAll();
-          res.json(tutors);
-      } catch (err: any) {
-          res.status(500).json({ error: err.message });
-      }
-  },
+const tutorController = createCrudController({
+  service: tutorService,
+  nomeRecurso: "Tutor",
+});
 
-  getById: async (req: Request, res: Response) => {
-      try {
-          const id = Number(req.params.id);
-          const tutor = await tutorService.getById(id);
-
-          if (!tutor)
-              return res.status(404).json({ error: "Tutor não encontrado" });
-
-          res.json(tutor);
-      } catch (err: any) {
-          res.status(500).json({ error: err.message });
-      }
-  },
-
-  create: async (req: Request, res: Response) => {
-      try {
-          const data = createTutorSchema.parse(req.body);
-          const newTutor = await tutorService.create(data);
-
-          res.status(201).json({
-              message: "Tutor criado com sucesso",
-              data: newTutor,
-          });
-      } catch (error) {
-          res.status(400).json({ erros: formatZodError(error) });
-      }
-  },
-
-  update: async (req: Request, res: Response) => {
-      try {
-          const id = Number(req.params.id);
-          const data = updateTutorSchema.parse(req.body);
-
-          const updatedTutor = await tutorService.update(id, data);
-          res.json(updatedTutor);
-      } catch (error) {
-          res.status(400).json({ erros: formatZodError(error) });
-      }
-  },
-
-  delete: async (req: Request, res: Response) => {
-    try {
-        const tutorId = Number(req.params.id);
-        const gerenteId = Number(req.query.gerenteId);
-
-        const data = deleteTutorSchema.parse({ tutorId, gerenteId });
-
-        // Verifica se o gerente existe
-        const canDelete = await tutorService.canGerenteDelete(data.gerenteId);
-        if (!canDelete) 
-            return res.status(403).json({ error: "Gerente não autorizado ou não encontrado" });
-
-        // Verifica se o tutor existe
-        const tutor = await tutorService.getById(data.tutorId);
-        if (!tutor)
-            return res.status(404).json({ error: "Tutor não encontrado" });
-
-        // Deleta o tutor
-        await tutorService.delete(data.tutorId);
-        res.json({ message: "Tutor deletado com sucesso" });
-
-    } catch (err: any) {
-        res.status(400).json({ errors: formatZodError(err) });
-    }
-},
-};
 export default tutorController;
-
