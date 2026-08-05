@@ -1,5 +1,7 @@
 # 🐾 API Petora
 
+> 🎓 **Projeto Acadêmico** — desenvolvido durante o curso de Ciência da Computação (UNIPE).
+
 API para gerenciamento de **petshop**: tutores, pets, veterinários, agendamentos e consultas, construída com **Node.js**, **Express** e **Prisma** (PostgreSQL).
 
 ---
