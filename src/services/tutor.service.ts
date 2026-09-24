@@ -15,25 +15,18 @@ const tutorService = {
   create: (data: createTutorInput) => prisma.tutor.create({ data }),
   update: (id: number, data: updateTutorInput) => prisma.tutor.update({ where: { id }, data }),
 
-  delete: async (tutorId: number) => {
-    // Busca todos os pets do tutor
-    const pets = await prisma.pet.findMany({
-      where: { tutorId },
-      include: { agendamentos: true, consultas: true },
-    });
+  // Remove o tutor junto com os pets e o histórico deles, tudo em uma única transação
+  delete: (tutorId: number) =>
+    prisma.$transaction(async (tx) => {
+      const pets = await tx.pet.findMany({ where: { tutorId }, select: { id: true } });
+      const petIds = pets.map((pet) => pet.id);
 
-    // Deleta agendamentos e consultas de cada pet
-    for (const pet of pets) {
-      await prisma.agendamento.deleteMany({ where: { petId: pet.id } });
-      await prisma.consulta.deleteMany({ where: { petId: pet.id } });
-    }
+      await tx.agendamento.deleteMany({ where: { petId: { in: petIds } } });
+      await tx.consulta.deleteMany({ where: { petId: { in: petIds } } });
+      await tx.pet.deleteMany({ where: { tutorId } });
 
-    // Deleta os pets do tutor
-    await prisma.pet.deleteMany({ where: { tutorId } });
-
-    // Finalmente, deleta o tutor
-    return prisma.tutor.delete({ where: { id: tutorId } });
-  },
+      return tx.tutor.delete({ where: { id: tutorId } });
+    }),
 };
 
 export default tutorService;

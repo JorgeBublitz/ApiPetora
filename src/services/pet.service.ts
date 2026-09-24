@@ -16,7 +16,13 @@ const petService = {
     prisma.pet.findUnique({ where: { id }, include: { agendamentos: true, consultas: true } }),
   create: (data: createPetInput) => prisma.pet.create({ data }),
   update: (id: number, data: updatePetInput) => prisma.pet.update({ where: { id }, data }),
-  delete: (id: number) => prisma.pet.delete({ where: { id } }),
+  // Remove o pet junto com seus agendamentos e consultas, em uma única transação
+  delete: (id: number) =>
+    prisma.$transaction(async (tx) => {
+      await tx.agendamento.deleteMany({ where: { petId: id } });
+      await tx.consulta.deleteMany({ where: { petId: id } });
+      return tx.pet.delete({ where: { id } });
+    }),
 };
 
 export default petService;

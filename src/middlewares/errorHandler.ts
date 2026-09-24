@@ -17,7 +17,7 @@ export class AppError extends Error {
 /**
  * Traduz erros Prisma conhecidos em respostas HTTP amigáveis.
  */
-function getPrismaErrorInfo(err: unknown): { status: number; message: string } | null {
+function getPrismaErrorInfo(err: unknown, method: string): { status: number; message: string } | null {
   if (typeof err !== "object" || err === null) return null;
   const code = (err as { code?: string }).code;
 
@@ -27,6 +27,10 @@ function getPrismaErrorInfo(err: unknown): { status: number; message: string } |
     case "P2025":
       return { status: 404, message: "Registro não encontrado para essa operação." };
     case "P2003":
+      // Em DELETE, a violação de chave estrangeira significa que há registros vinculados
+      if (method === "DELETE") {
+        return { status: 409, message: "O registro possui outros registros vinculados e não pode ser removido." };
+      }
       return { status: 400, message: "Registro relacionado não existe. Verifique os IDs informados." };
     default:
       return null;
@@ -36,9 +40,14 @@ function getPrismaErrorInfo(err: unknown): { status: number; message: string } |
 /**
  * Middleware global de erros. Plugado no final do pipeline em src/index.ts.
  */
-export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
   if (err instanceof AppError) {
     return res.status(err.status).json({ error: err.message });
+  }
+
+  // JSON malformado no corpo da requisição
+  if ((err as { type?: string })?.type === "entity.parse.failed") {
+    return res.status(400).json({ error: "JSON inválido no corpo da requisição." });
   }
 
   if (err instanceof ZodError) {
@@ -51,7 +60,7 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     });
   }
 
-  const prismaError = getPrismaErrorInfo(err);
+  const prismaError = getPrismaErrorInfo(err, req.method);
   if (prismaError) {
     return res.status(prismaError.status).json({ error: prismaError.message });
   }

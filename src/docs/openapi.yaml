@@ -1,0 +1,1098 @@
+# Especificação OpenAPI da API Petora (lida pelo swagger-jsdoc).
+# Todas as rotas exigem Bearer token, exceto POST /auth/login.
+
+tags:
+- name: Auth
+  description: Login e perfil do usuário autenticado
+- name: Gerentes
+  description: 'Leitura: GERENTE. Criação e edição: GERENTE. Exclusão: GERENTE.'
+- name: Veterinários
+  description: 'Leitura: autenticado. Criação e edição: GERENTE. Exclusão: GERENTE.'
+- name: Tutores
+  description: 'Leitura: autenticado. Criação e edição: autenticado. Exclusão: GERENTE.'
+- name: Pets
+  description: 'Leitura: autenticado. Criação e edição: autenticado. Exclusão: GERENTE.'
+- name: Consultas
+  description: 'Leitura: autenticado. Criação e edição: autenticado. Exclusão: GERENTE.'
+- name: Agendamentos
+  description: 'Leitura: autenticado. Criação e edição: autenticado. Exclusão: GERENTE.'
+paths:
+  /auth/login:
+    post:
+      tags:
+      - Auth
+      summary: Login de gerente ou veterinário
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        200:
+          description: Token JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        401:
+          description: E-mail ou senha inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+  /auth/me:
+    get:
+      tags:
+      - Auth
+      summary: Perfil do usuário autenticado
+      responses:
+        200:
+          description: Tipo e dados do usuário (sem senha)
+        401:
+          description: Token ausente, inválido ou expirado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+  /gerente:
+    get:
+      tags:
+      - Gerentes
+      summary: Listar gerentes
+      responses:
+        200:
+          description: Lista (vazia quando não há registros)
+        401:
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    post:
+      tags:
+      - Gerentes
+      summary: Cadastrar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GerenteInput'
+      responses:
+        201:
+          description: Criado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        401:
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        409:
+          description: E-mail já cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        403:
+          description: Perfil sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+  /gerente/{id}:
+    parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    get:
+      tags:
+      - Gerentes
+      summary: Buscar por ID
+      responses:
+        200:
+          description: Registro encontrado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    put:
+      tags:
+      - Gerentes
+      summary: Atualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GerenteUpdate'
+      responses:
+        200:
+          description: Atualizado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        403:
+          description: Perfil sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    delete:
+      tags:
+      - Gerentes
+      summary: Remover (somente GERENTE)
+      responses:
+        200:
+          description: Removido
+        403:
+          description: Perfil sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        409:
+          description: Possui registros vinculados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        400:
+          description: Tentativa de remover a própria conta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+  /veterinario:
+    get:
+      tags:
+      - Veterinários
+      summary: Listar veterinários
+      responses:
+        200:
+          description: Lista (vazia quando não há registros)
+        401:
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    post:
+      tags:
+      - Veterinários
+      summary: Cadastrar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VeterinarioInput'
+      responses:
+        201:
+          description: Criado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        401:
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        409:
+          description: E-mail já cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        403:
+          description: Perfil sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+  /veterinario/{id}:
+    parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    get:
+      tags:
+      - Veterinários
+      summary: Buscar por ID
+      responses:
+        200:
+          description: Registro encontrado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    put:
+      tags:
+      - Veterinários
+      summary: Atualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VeterinarioUpdate'
+      responses:
+        200:
+          description: Atualizado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        403:
+          description: Perfil sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    delete:
+      tags:
+      - Veterinários
+      summary: Remover (somente GERENTE)
+      responses:
+        200:
+          description: Removido
+        403:
+          description: Perfil sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        409:
+          description: Possui registros vinculados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+  /tutor:
+    get:
+      tags:
+      - Tutores
+      summary: Listar tutores
+      responses:
+        200:
+          description: Lista (vazia quando não há registros)
+        401:
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    post:
+      tags:
+      - Tutores
+      summary: Cadastrar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TutorInput'
+      responses:
+        201:
+          description: Criado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        401:
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        409:
+          description: E-mail já cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+  /tutor/{id}:
+    parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    get:
+      tags:
+      - Tutores
+      summary: Buscar por ID
+      responses:
+        200:
+          description: Registro encontrado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    put:
+      tags:
+      - Tutores
+      summary: Atualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TutorUpdate'
+      responses:
+        200:
+          description: Atualizado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    delete:
+      tags:
+      - Tutores
+      summary: Remover (somente GERENTE)
+      responses:
+        200:
+          description: Removido
+        403:
+          description: Perfil sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        409:
+          description: Possui registros vinculados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+      description: Remove também os pets do tutor e os agendamentos e consultas desses pets.
+  /pet:
+    get:
+      tags:
+      - Pets
+      summary: Listar pets
+      responses:
+        200:
+          description: Lista (vazia quando não há registros)
+        401:
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    post:
+      tags:
+      - Pets
+      summary: Cadastrar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetInput'
+      responses:
+        201:
+          description: Criado
+        400:
+          description: Dados inválidos ou ID relacionado inexistente
+        401:
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+  /pet/{id}:
+    parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    get:
+      tags:
+      - Pets
+      summary: Buscar por ID
+      responses:
+        200:
+          description: Registro encontrado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    put:
+      tags:
+      - Pets
+      summary: Atualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetUpdate'
+      responses:
+        200:
+          description: Atualizado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    delete:
+      tags:
+      - Pets
+      summary: Remover (somente GERENTE)
+      responses:
+        200:
+          description: Removido
+        403:
+          description: Perfil sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        409:
+          description: Possui registros vinculados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+      description: Remove também os agendamentos e consultas do pet.
+  /consulta:
+    get:
+      tags:
+      - Consultas
+      summary: Listar consultas
+      responses:
+        200:
+          description: Lista (vazia quando não há registros)
+        401:
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    post:
+      tags:
+      - Consultas
+      summary: Cadastrar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsultaInput'
+      responses:
+        201:
+          description: Criado
+        400:
+          description: Dados inválidos ou ID relacionado inexistente
+        401:
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+  /consulta/{id}:
+    parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    get:
+      tags:
+      - Consultas
+      summary: Buscar por ID
+      responses:
+        200:
+          description: Registro encontrado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    put:
+      tags:
+      - Consultas
+      summary: Atualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsultaUpdate'
+      responses:
+        200:
+          description: Atualizado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    delete:
+      tags:
+      - Consultas
+      summary: Remover (somente GERENTE)
+      responses:
+        200:
+          description: Removido
+        403:
+          description: Perfil sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        409:
+          description: Possui registros vinculados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+  /agendamento:
+    get:
+      tags:
+      - Agendamentos
+      summary: Listar agendamentos
+      responses:
+        200:
+          description: Lista (vazia quando não há registros)
+        401:
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    post:
+      tags:
+      - Agendamentos
+      summary: Cadastrar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgendamentoInput'
+      responses:
+        201:
+          description: Criado
+        400:
+          description: Dados inválidos ou ID relacionado inexistente
+        401:
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+  /agendamento/{id}:
+    parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    get:
+      tags:
+      - Agendamentos
+      summary: Buscar por ID
+      responses:
+        200:
+          description: Registro encontrado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    put:
+      tags:
+      - Agendamentos
+      summary: Atualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgendamentoUpdate'
+      responses:
+        200:
+          description: Atualizado
+        400:
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    delete:
+      tags:
+      - Agendamentos
+      summary: Remover (somente GERENTE)
+      responses:
+        200:
+          description: Removido
+        403:
+          description: Perfil sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        409:
+          description: Possui registros vinculados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Erro:
+      type: object
+      properties:
+        error:
+          type: string
+    ErroValidacao:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Dados inválidos.
+        erros:
+          type: array
+          items:
+            type: object
+            properties:
+              campo:
+                type: string
+              mensagem:
+                type: string
+    LoginRequest:
+      type: object
+      required:
+      - email
+      - senha
+      properties:
+        email:
+          type: string
+          example: alice@admin.com
+          format: email
+        senha:
+          type: string
+          example: senha1234
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        tipo:
+          type: string
+          enum:
+          - GERENTE
+          - VETERINARIO
+        usuario:
+          type: object
+          properties:
+            id:
+              type: integer
+            nome:
+              type: string
+            email:
+              type: string
+    GerenteInput:
+      type: object
+      required:
+      - nome
+      - email
+      - senha
+      properties:
+        nome:
+          type: string
+          example: Alice Silva
+        email:
+          type: string
+          example: alice@admin.com
+          format: email
+        senha:
+          type: string
+          minLength: 6
+          description: Mínimo 6 caracteres, com número e caractere especial.
+          example: Senha@123
+    GerenteUpdate:
+      type: object
+      description: Todos os campos são opcionais.
+      properties:
+        nome:
+          type: string
+          example: Alice Silva
+        email:
+          type: string
+          example: alice@admin.com
+          format: email
+        senha:
+          type: string
+          minLength: 6
+          description: Mínimo 6 caracteres, com número e caractere especial.
+          example: Senha@123
+    VeterinarioInput:
+      type: object
+      required:
+      - nome
+      - email
+      - senha
+      - especialidade
+      properties:
+        nome:
+          type: string
+          example: Dra. Paula
+        email:
+          type: string
+          example: paula@vet.com
+          format: email
+        senha:
+          type: string
+          minLength: 6
+          description: Mínimo 6 caracteres, com número e caractere especial.
+          example: Senha@123
+        especialidade:
+          type: string
+          example: Clínica geral
+    VeterinarioUpdate:
+      type: object
+      description: Todos os campos são opcionais.
+      properties:
+        nome:
+          type: string
+          example: Dra. Paula
+        email:
+          type: string
+          example: paula@vet.com
+          format: email
+        senha:
+          type: string
+          minLength: 6
+          description: Mínimo 6 caracteres, com número e caractere especial.
+          example: Senha@123
+        especialidade:
+          type: string
+          example: Clínica geral
+    TutorInput:
+      type: object
+      required:
+      - nome
+      - email
+      properties:
+        nome:
+          type: string
+          example: Carlos Souza
+          minLength: 3
+        email:
+          type: string
+          example: carlos@email.com
+          format: email
+        telefone:
+          type: string
+          example: (83) 99999-0000
+        endereco:
+          type: string
+          example: Rua A, 123
+    TutorUpdate:
+      type: object
+      description: Todos os campos são opcionais.
+      properties:
+        nome:
+          type: string
+          example: Carlos Souza
+          minLength: 3
+        email:
+          type: string
+          example: carlos@email.com
+          format: email
+        telefone:
+          type: string
+          example: (83) 99999-0000
+        endereco:
+          type: string
+          example: Rua A, 123
+    PetInput:
+      type: object
+      required:
+      - nome
+      - especie
+      - raca
+      - dataNascimento
+      - tutorId
+      properties:
+        nome:
+          type: string
+          example: Rex
+        especie:
+          type: string
+          example: Cachorro
+        raca:
+          type: string
+          example: Labrador
+        dataNascimento:
+          type: string
+          example: '2020-05-10'
+          format: date
+        tutorId:
+          type: integer
+          example: 1
+    PetUpdate:
+      type: object
+      description: Todos os campos são opcionais.
+      properties:
+        nome:
+          type: string
+          example: Rex
+        especie:
+          type: string
+          example: Cachorro
+        raca:
+          type: string
+          example: Labrador
+        dataNascimento:
+          type: string
+          example: '2020-05-10'
+          format: date
+        tutorId:
+          type: integer
+          example: 1
+    ConsultaInput:
+      type: object
+      required:
+      - data
+      - veterinarioId
+      - petId
+      - descricao
+      properties:
+        data:
+          type: string
+          example: '2026-10-01T14:00:00.000Z'
+          format: date-time
+        veterinarioId:
+          type: integer
+          example: 1
+        petId:
+          type: integer
+          example: 1
+        descricao:
+          type: string
+          example: Check-up anual
+        tratamento:
+          type: string
+          example: Vermífugo
+    ConsultaUpdate:
+      type: object
+      description: Todos os campos são opcionais.
+      properties:
+        data:
+          type: string
+          example: '2026-10-01T14:00:00.000Z'
+          format: date-time
+        veterinarioId:
+          type: integer
+          example: 1
+        petId:
+          type: integer
+          example: 1
+        descricao:
+          type: string
+          example: Check-up anual
+        tratamento:
+          type: string
+          example: Vermífugo
+    AgendamentoInput:
+      type: object
+      required:
+      - data
+      - servico
+      - petId
+      properties:
+        data:
+          type: string
+          example: '2026-10-02T10:00:00.000Z'
+          format: date-time
+        servico:
+          type: string
+          example: Banho e tosa
+        observacao:
+          type: string
+          example: Pelo longo
+        petId:
+          type: integer
+          example: 1
+    AgendamentoUpdate:
+      type: object
+      description: Todos os campos são opcionais.
+      properties:
+        data:
+          type: string
+          example: '2026-10-02T10:00:00.000Z'
+          format: date-time
+        servico:
+          type: string
+          example: Banho e tosa
+        observacao:
+          type: string
+          example: Pelo longo
+        petId:
+          type: integer
+          example: 1

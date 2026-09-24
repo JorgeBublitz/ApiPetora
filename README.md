@@ -1,138 +1,122 @@
 # API Petora
 
-API para gerenciamento de **petshop**: tutores, pets, veterinários, agendamentos e consultas, construída com **Node.js**, **Express** e **Prisma** (PostgreSQL).
+[![CI](https://github.com/JorgeBublitz/ApiPetora/actions/workflows/ci.yml/badge.svg)](https://github.com/JorgeBublitz/ApiPetora/actions/workflows/ci.yml)
+![Node.js](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma-4169E1?logo=postgresql&logoColor=white)
 
----
+API REST para a gestão de um petshop com clínica veterinária: tutores, pets, veterinários, consultas e agendamentos de serviços como banho e tosa.
 
-## ✨ Funcionalidades
+O acesso é controlado por perfil. **Gerentes** administram tudo. **Veterinários** consultam e registram atendimentos, mas não excluem registros nem gerenciam a equipe.
 
-| Módulo | Descrição |
-| :--- | :--- |
-| Autenticação | Login JWT (`Gerente` ou `Veterinário`) + RBAC |
-| Gerentes | CRUD de gerentes (com senha **hasheada** com bcrypt) |
-| Veterinários | CRUD de veterinários (senha **hasheada**, nunca retornada na API) |
-| Tutores | CRUD de tutores com seus pets |
-| Pets | CRUD de pets (espécie, raça, data de nascimento) |
-| Consultas | Registro de consultas veterinárias |
-| Agendamentos | Agendamento de serviços (banho, tosa, etc.) |
-| Swagger | Documentação interativa em `/api-docs` |
+## Destaques técnicos
 
----
+- **Autenticação JWT e controle de acesso por perfil (RBAC)**: as permissões vêm do token, nunca do corpo da requisição.
+- **Factory de controllers CRUD** com TypeScript genérico: cada recurso declara só o seu service e herda o fluxo padrão.
+- **Validação com Zod** em body e parâmetros de rota.
+- **Tratamento global de erros**: registro inexistente retorna `404`, e-mail duplicado `409`, ID relacionado inválido `400`, exclusão de registro com vínculos `409`.
+- **Exclusões em cascata dentro de transações**: remover um tutor apaga os pets, consultas e agendamentos dele de uma vez só, sem deixar dados pela metade.
+- **Segurança**: senhas com bcrypt (nunca retornadas pela API), Helmet, CORS, rate limiting e login com mensagem única para não revelar e-mails cadastrados.
+- **32 endpoints** documentados no Swagger, com botão *Authorize* para testar com token.
+- **Testes de integração** (Vitest + Supertest) contra PostgreSQL real, rodando no **GitHub Actions**.
 
-## 🛠️ Tecnologias
+## Stack
 
-- **Node.js** + **TypeScript**
-- **Express** 5
-- **Prisma** (PostgreSQL)
-- **Bcrypt** (hash de senhas)
-- **Zod** (validação de schemas, body e params)
-- **JWT** (autenticação com `jsonwebtoken`)
-- **Helmet** + **Express Rate Limit** (segurança)
+| Camada | Tecnologias |
+| --- | --- |
+| Runtime e linguagem | Node.js, TypeScript |
+| Framework | Express 5 |
+| Banco de dados | PostgreSQL com Prisma ORM |
+| Validação | Zod |
+| Segurança | JWT, bcrypt, Helmet, express-rate-limit, CORS |
+| Documentação | Swagger (OpenAPI 3) |
+| Qualidade | Vitest, Supertest, ESLint, GitHub Actions |
 
----
+## Modelo de dados
 
-## ⚙️ Configuração Local
-
-### Pré-requisitos
-
-- 🟢 **Node.js**
-- 🐘 **PostgreSQL**
-
-### 1. Instalar dependências
-
-```bash
-npm install
+```mermaid
+erDiagram
+    TUTOR ||--o{ PET : possui
+    PET ||--o{ CONSULTA : recebe
+    PET ||--o{ AGENDAMENTO : tem
+    VETERINARIO ||--o{ CONSULTA : realiza
+    GERENTE {
+        int id
+        string email
+    }
 ```
 
-### 2. Configurar variáveis de ambiente
+## Endpoints
+
+Todas as rotas ficam sob `/api` e exigem `Authorization: Bearer <token>`, exceto o login.
+
+| Recurso | Rotas | Leitura | Criação e edição | Exclusão |
+| --- | --- | --- | --- | --- |
+| Auth | `POST /auth/login` · `GET /auth/me` | pública / autenticado | | |
+| Gerentes | `/gerente` | GERENTE | GERENTE | GERENTE |
+| Veterinários | `/veterinario` | autenticado | GERENTE | GERENTE |
+| Tutores | `/tutor` | autenticado | autenticado | GERENTE |
+| Pets | `/pet` | autenticado | autenticado | GERENTE |
+| Consultas | `/consulta` | autenticado | autenticado | GERENTE |
+| Agendamentos | `/agendamento` | autenticado | autenticado | GERENTE |
+
+Cada recurso tem `GET /`, `GET /:id`, `POST /`, `PUT /:id` e `DELETE /:id`. A documentação interativa fica em `http://localhost:3000/api-docs`.
 
 ```bash
-cp .env.example .env
-```
-
-Preencha a `DATABASE_URL` com os dados do seu banco e defina um `JWT_SECRET` forte:
-
-```bash
-# Gere um segredo, por exemplo:
-node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
-```
-
-### 3. Rodar as migrações
-
-```bash
-npm run prisma:migrate
-```
-
-### 4. Rodar a aplicação
-
-```bash
-npm run dev
-```
-
-A aplicação estará rodando em `http://localhost:3000` (Swagger em `/api-docs`).
-
-### 5. Comandos úteis
-
-```bash
-# Rodar migrations
-npx prisma migrate dev
-
-# Resetar o banco e rodar seed novamente
-npx prisma migrate reset
-
-# Rodar o seed manualmente
-npm run prisma:seed
-```
-
----
-
-## 📡 Endpoints
-
-| Módulo | Rotas |
-| :--- | :--- |
-| Autenticação | `POST /api/auth/login`, `GET /api/auth/me` |
-| Gerente | `/api/gerente` |
-| Veterinário | `/api/veterinario` |
-| Tutor | `/api/tutor` |
-| Pet | `/api/pet` |
-| Consulta | `/api/consulta` |
-| Agendamento | `/api/agendamento` |
-
-Cada rota oferece `GET /`, `GET /:id`, `POST /`, `PUT /:id` e `DELETE /:id`.
-
----
-
-## 🔐 Autenticação e RBAC
-
-A API é protegida por **JWT Bearer**. Faça login para obter o token:
-
-```bash
+# Login (usuário criado pelo seed)
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email": "alice@admin.com", "senha": "senha1234"}'
+
+# Listar pets com o token recebido
+curl http://localhost:3000/api/pet -H "Authorization: Bearer <token>"
 ```
 
-Resposta: `{ "token": "...", "tipo": "GERENTE", "usuario": { ... } }`
+## Como rodar localmente
 
-Use o token nas demais rotas:
+**Pré-requisitos:** Node.js 20 ou superior e um PostgreSQL acessível.
 
 ```bash
-curl http://localhost:3000/api/tutor \
-  -H "Authorization: Bearer SEU_TOKEN"
+git clone https://github.com/JorgeBublitz/ApiPetora.git
+cd ApiPetora
+npm install
+cp .env.example .env         # preencha DATABASE_URL e JWT_SECRET
+npx prisma migrate deploy    # cria as tabelas
+npm run prisma:seed          # dados de exemplo (gerentes, veterinários, tutores e pets)
+npm run dev                  # http://localhost:3000/api
 ```
 
-### Regras de acesso
+Usuários do seed:
 
-| Recurso | Leitura | Escrita (POST/PUT) | Exclusão |
-| :--- | :--- | :--- | :--- |
-| Gerente | GERENTE | GERENTE | GERENTE |
-| Veterinário | Autenticado | GERENTE | GERENTE |
-| Tutor / Pet / Consulta / Agendamento | Autenticado | Autenticado | GERENTE |
+| Perfil | E-mail | Senha |
+| --- | --- | --- |
+| Gerente | `alice@admin.com` | `senha1234` |
+| Gerente | `bruno@admin.com` | `senha5678` |
 
-> ⚠️ A autorização vem do **token** (nunca do corpo da requisição). Antigamente o delete exigia `gerenteId`/`solicitanteId` enviados pelo cliente — isso era forjável e foi removido.
+## Scripts
 
----
+| Comando | O que faz |
+| --- | --- |
+| `npm run dev` | Servidor com recarga automática |
+| `npm test` | Testes de integração (limpa o banco do `DATABASE_URL`; use um banco só para testes) |
+| `npm run lint` / `npm run typecheck` | ESLint e checagem de tipos |
+| `npm run build` / `npm start` | Build de produção e execução |
+| `npm run prisma:seed` | Popula o banco com dados de exemplo |
 
-## 📝 Licença
+## Estrutura
+
+```
+src/
+├── routes/        # Rotas e regras de acesso por perfil
+├── controllers/   # Factory CRUD genérica e controllers específicos
+├── services/      # Regras de negócio e acesso ao banco
+├── schemas/       # Schemas Zod
+├── middlewares/   # Autenticação, autorização, validação e erros
+├── docs/          # Especificação OpenAPI
+├── app.ts         # Configuração do Express
+└── server.ts      # Inicialização do servidor
+```
+
+## Licença
 
 MIT

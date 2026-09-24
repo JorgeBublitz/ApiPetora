@@ -3,7 +3,6 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import routes from "./routes/index.routes";
-import prisma from "./db/prismaClient";
 import { swaggerDocs } from "./config/swagger";
 import { env } from "./config/env";
 import { errorHandler } from "./middlewares/errorHandler";
@@ -31,6 +30,8 @@ const globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Muitas requisições. Tente novamente mais tarde." },
+  // Nos testes automatizados o limite atrapalharia a suíte
+  skip: () => env.nodeEnv === "test",
 });
 app.use("/api", globalLimiter);
 
@@ -40,6 +41,11 @@ app.use("/api", routes);
 // Swagger
 swaggerDocs(app);
 
+// Health check
+app.get("/health", (_req: Request, res: Response) => {
+  res.json({ status: "ok" });
+});
+
 // 404 - rota não encontrada
 app.use((req: Request, res: Response) => {
   res.status(404).json({ error: "Rota não encontrada" });
@@ -47,23 +53,5 @@ app.use((req: Request, res: Response) => {
 
 // Tratamento global de erros
 app.use(errorHandler);
-
-const PORT = env.port;
-
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Server rodando em http://localhost:${PORT}/api`);
-});
-
-// Graceful shutdown
-const gracefulShutdown = async (signal: string) => {
-  console.log(`\n${signal} recebido. Encerrando servidor...`);
-  server.close(async () => {
-    await prisma.$disconnect();
-    process.exit(0);
-  });
-};
-
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 export default app;

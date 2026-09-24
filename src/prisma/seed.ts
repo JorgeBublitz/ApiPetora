@@ -13,7 +13,7 @@ async function main() {
     const vet2Senha = await hashUtil.hash("vet5678");
 
     // ===== Gerentes =====
-    const gerente1 = await prisma.gerente.create({
+    await prisma.gerente.create({
         data: {
             nome: "Alice Silva",
             email: "alice@admin.com",
@@ -21,7 +21,7 @@ async function main() {
         },
     });
 
-    const gerente2 = await prisma.gerente.create({
+    await prisma.gerente.create({
         data: {
             nome: "Bruno Costa",
             email: "bruno@admin.com",
@@ -89,7 +89,7 @@ async function main() {
     });
 
     // ===== Agendamentos =====
-    const agendamento1 = await prisma.agendamento.create({
+    await prisma.agendamento.create({
         data: {
             data: new Date("2025-10-10T10:00:00"),
             servico: "Banho",
@@ -98,7 +98,7 @@ async function main() {
         },
     });
 
-    const agendamento2 = await prisma.agendamento.create({
+    await prisma.agendamento.create({
         data: {
             data: new Date("2025-10-12T15:00:00"),
             servico: "Tosa",
@@ -108,7 +108,7 @@ async function main() {
     });
 
     // ===== Consultas =====
-    const consulta1 = await prisma.consulta.create({
+    await prisma.consulta.create({
         data: {
             data: new Date("2025-10-11T09:00:00"),
             veterinarioId: vet1.id,
@@ -118,7 +118,7 @@ async function main() {
         },
     });
 
-    const consulta2 = await prisma.consulta.create({
+    await prisma.consulta.create({
         data: {
             data: new Date("2025-10-13T14:00:00"),
             veterinarioId: vet2.id,

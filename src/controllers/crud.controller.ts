@@ -1,20 +1,17 @@
 import type { Request, Response } from "express";
 import { AppError } from "../middlewares/errorHandler";
 
-type Service = {
+type Service<TCreate, TUpdate> = {
   getAll: () => Promise<unknown[]>;
   getById: (id: number) => Promise<unknown | null>;
-  create: (data: any) => Promise<unknown>;
-  update: (id: number, data: any) => Promise<unknown>;
+  create: (data: TCreate) => Promise<unknown>;
+  update: (id: number, data: TUpdate) => Promise<unknown>;
   delete: (id: number) => Promise<unknown>;
 };
 
-type CrudControllerOptions = {
-  service: Service;
+type CrudControllerOptions<TCreate, TUpdate> = {
+  service: Service<TCreate, TUpdate>;
   nomeRecurso: string;
-  sanitize?: (data: any) => any;
-  conflictMessage?: string;
-  referenceMessage?: string;
 };
 
 function capitalize(palavra: string) {
@@ -23,8 +20,8 @@ function capitalize(palavra: string) {
 
 /**
  * Factory de controller CRUD.
- * Centraliza o fluxo: validação (prévia, via middleware), operação no service
- * e tratamento de erros (404 / 409 / 400 / 500) em um único lugar.
+ * Centraliza o fluxo CRUD. A validação acontece antes, nos middlewares Zod,
+ * e os erros (404 / 409 / 400 / 500) são tratados pelo errorHandler global.
  *
  * @example
  * const gerenteController = createCrudController({
@@ -32,27 +29,16 @@ function capitalize(palavra: string) {
  *   nomeRecurso: "Gerente",
  * });
  */
-export function createCrudController({
+export function createCrudController<TCreate, TUpdate>({
   service,
   nomeRecurso,
-  sanitize,
-  conflictMessage,
-  referenceMessage,
-}: CrudControllerOptions) {
+}: CrudControllerOptions<TCreate, TUpdate>) {
   const Nome = capitalize(nomeRecurso);
-  const conflito =
-    conflictMessage ?? `Já existe ${nomeRecurso} com esses dados (campo único duplicado).`;
-  const referencia =
-    referenceMessage ?? `Registro relacionado não existe. Verifique os IDs informados.`;
 
   return {
     getAll: async (_req: Request, res: Response) => {
+      // Sempre retorna um array (vazio quando não há registros), para o cliente tratar de um jeito só
       const registros = await service.getAll();
-
-      if (registros.length === 0) {
-        return res.status(200).json({ message: `Nenhum ${nomeRecurso} encontrado.` });
-      }
-
       res.json(registros);
     },
 
@@ -68,8 +54,8 @@ export function createCrudController({
     },
 
     create: async (req: Request, res: Response) => {
-      const data = sanitize ? sanitize(req.body) : req.body;
-      const novoRegistro = await service.create(data);
+      // req.body já foi validado pelo schema Zod da rota
+      const novoRegistro = await service.create(req.body as TCreate);
 
       res.status(201).json({
         message: `${Nome} criado com sucesso.`,
@@ -79,9 +65,7 @@ export function createCrudController({
 
     update: async (req: Request, res: Response) => {
       const id = Number(req.params.id);
-      const data = sanitize ? sanitize(req.body) : req.body;
-
-      const registro = await service.update(id, data);
+      const registro = await service.update(id, req.body as TUpdate);
       res.json({
         message: `${Nome} atualizado com sucesso.`,
         data: registro,
