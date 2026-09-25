@@ -12,6 +12,8 @@ type Service<TCreate, TUpdate> = {
 type CrudControllerOptions<TCreate, TUpdate> = {
   service: Service<TCreate, TUpdate>;
   nomeRecurso: string;
+  /** true quando `nomeRecurso` é um substantivo feminino (ex.: "Consulta"), para concordância de gênero nas mensagens. */
+  feminino?: boolean;
 };
 
 function capitalize(palavra: string) {
@@ -32,8 +34,13 @@ function capitalize(palavra: string) {
 export function createCrudController<TCreate, TUpdate>({
   service,
   nomeRecurso,
+  feminino = false,
 }: CrudControllerOptions<TCreate, TUpdate>) {
   const Nome = capitalize(nomeRecurso);
+  const encontrado = feminino ? "encontrada" : "encontrado";
+  const criado = feminino ? "criada" : "criado";
+  const atualizado = feminino ? "atualizada" : "atualizado";
+  const deletado = feminino ? "deletada" : "deletado";
 
   return {
     getAll: async (_req: Request, res: Response) => {
@@ -47,7 +54,7 @@ export function createCrudController<TCreate, TUpdate>({
       const registro = await service.getById(id);
 
       if (!registro) {
-        throw new AppError(404, `${Nome} não encontrado.`);
+        throw new AppError(404, `${Nome} não ${encontrado}.`);
       }
 
       res.json(registro);
@@ -58,7 +65,7 @@ export function createCrudController<TCreate, TUpdate>({
       const novoRegistro = await service.create(req.body as TCreate);
 
       res.status(201).json({
-        message: `${Nome} criado com sucesso.`,
+        message: `${Nome} ${criado} com sucesso.`,
         data: novoRegistro,
       });
     },
@@ -67,7 +74,7 @@ export function createCrudController<TCreate, TUpdate>({
       const id = Number(req.params.id);
       const registro = await service.update(id, req.body as TUpdate);
       res.json({
-        message: `${Nome} atualizado com sucesso.`,
+        message: `${Nome} ${atualizado} com sucesso.`,
         data: registro,
       });
     },
@@ -76,7 +83,7 @@ export function createCrudController<TCreate, TUpdate>({
       const id = Number(req.params.id);
       await service.delete(id);
 
-      res.json({ message: `${Nome} deletado com sucesso.` });
+      res.json({ message: `${Nome} ${deletado} com sucesso.` });
     },
   };
 }

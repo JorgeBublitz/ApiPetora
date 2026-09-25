@@ -9,6 +9,14 @@ export type TipoUsuario = "GERENTE" | "VETERINARIO";
 /**
  * Busca o usuário por e-mail nas duas tabelas autenticáveis.
  * Retorna o registro + o tipo (ou null se não existir em nenhuma).
+ *
+ * Limitação conhecida: Gerente e Veterinario têm colunas de e-mail com constraint
+ * UNIQUE independente uma da outra (tabelas separadas). O create de cada serviço faz
+ * uma checagem extra em nível de aplicação para impedir e-mail duplicado entre as duas
+ * tabelas, mas isso não é atômico (race condition possível entre checagem e insert) —
+ * uma garantia real exigiria uma tabela/coluna de e-mail compartilhada com constraint
+ * única no banco. Se, por qualquer motivo, o mesmo e-mail existir nas duas tabelas,
+ * esta função retorna o Gerente (a primeira tabela consultada).
  */
 async function findUserByEmail(email: string) {
   const gerente = await prisma.gerente.findUnique({ where: { email } });

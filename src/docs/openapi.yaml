@@ -3,25 +3,48 @@
 
 tags:
 - name: Auth
-  description: Login e perfil do usuário autenticado
+  description: >-
+    Login e consulta do próprio perfil. POST /auth/login é a única rota pública
+    da API; todas as demais exigem o header "Authorization: Bearer <token>".
 - name: Gerentes
-  description: 'Leitura: GERENTE. Criação e edição: GERENTE. Exclusão: GERENTE.'
+  description: >-
+    Área administrativa, restrita a GERENTE em toda a rota (leitura, criação,
+    edição e exclusão). Veterinários recebem 403 em qualquer operação aqui.
+    Um gerente não pode excluir a própria conta (400).
 - name: Veterinários
-  description: 'Leitura: autenticado. Criação e edição: GERENTE. Exclusão: GERENTE.'
+  description: >-
+    Leitura: qualquer usuário autenticado (GERENTE ou VETERINARIO). Criação,
+    edição e exclusão: somente GERENTE (cadastro de equipe é decisão administrativa).
 - name: Tutores
-  description: 'Leitura: autenticado. Criação e edição: autenticado. Exclusão: GERENTE.'
+  description: >-
+    Leitura e cadastro/edição: qualquer usuário autenticado. Exclusão: somente
+    GERENTE. Excluir um tutor também remove, em cascata, seus pets e o histórico
+    (consultas e agendamentos) desses pets.
 - name: Pets
-  description: 'Leitura: autenticado. Criação e edição: autenticado. Exclusão: GERENTE.'
+  description: >-
+    Leitura e cadastro/edição: qualquer usuário autenticado. Exclusão: somente
+    GERENTE. Excluir um pet também remove, em cascata, seus agendamentos e consultas.
 - name: Consultas
-  description: 'Leitura: autenticado. Criação e edição: autenticado. Exclusão: GERENTE.'
+  description: >-
+    Registro de atendimentos veterinários. Leitura e cadastro/edição: qualquer
+    usuário autenticado. Exclusão: somente GERENTE.
 - name: Agendamentos
-  description: 'Leitura: autenticado. Criação e edição: autenticado. Exclusão: GERENTE.'
+  description: >-
+    Agendamento de serviços gerais do petshop (banho, tosa etc). Leitura e
+    cadastro/edição: qualquer usuário autenticado. Exclusão: somente GERENTE.
 paths:
   /auth/login:
     post:
       tags:
       - Auth
-      summary: Login de gerente ou veterinário
+      summary: Autenticar e obter token JWT
+      description: >-
+        Autentica por e-mail e senha contra as tabelas de Gerente e Veterinario
+        (e-mail é único em cada tabela, verificado nessa ordem). Por segurança,
+        a mensagem de erro é sempre a mesma ("E-mail ou senha inválidos.") tanto
+        para e-mail inexistente quanto para senha incorreta, para não revelar quais
+        e-mails estão cadastrados. Em caso de sucesso, retorna um token JWT que deve
+        ser enviado como "Authorization: Bearer <token>" nas demais rotas.
       security: []
       requestBody:
         required: true
@@ -31,19 +54,19 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         200:
-          description: Token JWT
+          description: Login realizado com sucesso.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/LoginResponse'
         400:
-          description: Dados inválidos
+          description: Corpo da requisição inválido (e-mail mal formatado ou senha ausente).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErroValidacao'
         401:
-          description: E-mail ou senha inválidos
+          description: E-mail não cadastrado ou senha incorreta.
           content:
             application/json:
               schema:
@@ -52,12 +75,20 @@ paths:
     get:
       tags:
       - Auth
-      summary: Perfil do usuário autenticado
+      summary: Obter o perfil do usuário autenticado
+      description: >-
+        Retorna o tipo de perfil (GERENTE ou VETERINARIO) e os dados cadastrais
+        do usuário do token, sem o campo de senha. Para veterinários, inclui
+        também o resumo das consultas que ele realizou.
       responses:
         200:
-          description: Tipo e dados do usuário (sem senha)
+          description: Perfil do usuário autenticado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMeResponse'
         401:
-          description: Token ausente, inválido ou expirado
+          description: Token ausente, inválido ou expirado.
           content:
             application/json:
               schema:
@@ -66,12 +97,25 @@ paths:
     get:
       tags:
       - Gerentes
-      summary: Listar gerentes
+      summary: Listar todos os gerentes
+      description: Restrito a GERENTE. Retorna um array (vazio quando não há registros), nunca 404.
       responses:
         200:
-          description: Lista (vazia quando não há registros)
+          description: Lista de gerentes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GerenteOutput'
         401:
-          description: Não autenticado
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        403:
+          description: Autenticado como VETERINARIO (rota restrita a GERENTE).
           content:
             application/json:
               schema:
@@ -79,7 +123,11 @@ paths:
     post:
       tags:
       - Gerentes
-      summary: Cadastrar
+      summary: Cadastrar um novo gerente
+      description: >-
+        Restrito a GERENTE. A senha deve ter no mínimo 6 caracteres, com pelo
+        menos um número e um caractere especial, e é armazenada com hash (bcrypt).
+        O e-mail deve ser único entre Gerente e Veterinario.
       requestBody:
         required: true
         content:
@@ -88,27 +136,31 @@ paths:
               $ref: '#/components/schemas/GerenteInput'
       responses:
         201:
-          description: Criado
+          description: Gerente criado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerenteRespostaEscrita'
         400:
-          description: Dados inválidos
+          description: Dados inválidos (nome vazio, e-mail mal formatado ou senha fora das regras).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErroValidacao'
         401:
-          description: Não autenticado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Erro'
-        409:
-          description: E-mail já cadastrado
+          description: Token ausente, inválido ou expirado.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         403:
-          description: Perfil sem permissão
+          description: Autenticado como VETERINARIO (rota restrita a GERENTE).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        409:
+          description: E-mail já cadastrado (em Gerente ou em Veterinario).
           content:
             application/json:
               schema:
@@ -121,21 +173,40 @@ paths:
       schema:
         type: integer
         minimum: 1
+        example: 1
+      description: ID numérico do gerente.
     get:
       tags:
       - Gerentes
-      summary: Buscar por ID
+      summary: Buscar um gerente por ID
+      description: Restrito a GERENTE.
       responses:
         200:
-          description: Registro encontrado
+          description: Gerente encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerenteOutput'
         400:
-          description: Dados inválidos
+          description: ID inválido (não numérico ou menor que 1).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErroValidacao'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        403:
+          description: Autenticado como VETERINARIO (rota restrita a GERENTE).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhum gerente com esse ID.
           content:
             application/json:
               schema:
@@ -143,7 +214,11 @@ paths:
     put:
       tags:
       - Gerentes
-      summary: Atualizar
+      summary: Atualizar um gerente
+      description: >-
+        Restrito a GERENTE. Todos os campos do corpo são opcionais (atualização
+        parcial); envie apenas os que deseja alterar. Se "senha" for enviada,
+        as mesmas regras de força da criação se aplicam e ela é re-hasheada.
       requestBody:
         required: true
         content:
@@ -152,21 +227,31 @@ paths:
               $ref: '#/components/schemas/GerenteUpdate'
       responses:
         200:
-          description: Atualizado
+          description: Gerente atualizado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GerenteRespostaEscrita'
         400:
-          description: Dados inválidos
+          description: Dados inválidos (formato de e-mail ou senha fora das regras).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErroValidacao'
-        404:
-          description: Não encontrado
+        401:
+          description: Token ausente, inválido ou expirado.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         403:
-          description: Perfil sem permissão
+          description: Autenticado como VETERINARIO (rota restrita a GERENTE).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        404:
+          description: Nenhum gerente com esse ID.
           content:
             application/json:
               schema:
@@ -174,30 +259,43 @@ paths:
     delete:
       tags:
       - Gerentes
-      summary: Remover (somente GERENTE)
+      summary: Remover um gerente
+      description: >-
+        Restrito a GERENTE. Um gerente não pode remover a própria conta
+        (retorna 400 em vez de 200, para evitar perda de acesso administrativo).
       responses:
         200:
-          description: Removido
+          description: Gerente removido com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensagemResposta'
+        400:
+          description: Tentativa de remover a própria conta.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         403:
-          description: Perfil sem permissão
+          description: Autenticado como VETERINARIO (rota restrita a GERENTE).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhum gerente com esse ID.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         409:
-          description: Possui registros vinculados
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Erro'
-        400:
-          description: Tentativa de remover a própria conta
+          description: (Não deve ocorrer na prática — Gerente não possui dependências com FK.)
           content:
             application/json:
               schema:
@@ -206,12 +304,21 @@ paths:
     get:
       tags:
       - Veterinários
-      summary: Listar veterinários
+      summary: Listar todos os veterinários
+      description: >-
+        Qualquer usuário autenticado. Retorna um array (vazio quando não há
+        registros), incluindo o resumo das consultas de cada veterinário.
       responses:
         200:
-          description: Lista (vazia quando não há registros)
+          description: Lista de veterinários.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VeterinarioOutput'
         401:
-          description: Não autenticado
+          description: Token ausente, inválido ou expirado.
           content:
             application/json:
               schema:
@@ -219,7 +326,11 @@ paths:
     post:
       tags:
       - Veterinários
-      summary: Cadastrar
+      summary: Cadastrar um novo veterinário
+      description: >-
+        Restrito a GERENTE. A senha deve ter no mínimo 6 caracteres, com pelo
+        menos um número e um caractere especial, e é armazenada com hash (bcrypt).
+        O e-mail deve ser único entre Gerente e Veterinario.
       requestBody:
         required: true
         content:
@@ -228,27 +339,31 @@ paths:
               $ref: '#/components/schemas/VeterinarioInput'
       responses:
         201:
-          description: Criado
+          description: Veterinário criado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VeterinarioRespostaEscrita'
         400:
-          description: Dados inválidos
+          description: Dados inválidos (nome/especialidade vazios, e-mail mal formatado ou senha fora das regras).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErroValidacao'
         401:
-          description: Não autenticado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Erro'
-        409:
-          description: E-mail já cadastrado
+          description: Token ausente, inválido ou expirado.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         403:
-          description: Perfil sem permissão
+          description: Autenticado como VETERINARIO (cadastro restrito a GERENTE).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        409:
+          description: E-mail já cadastrado (em Gerente ou em Veterinario).
           content:
             application/json:
               schema:
@@ -261,21 +376,34 @@ paths:
       schema:
         type: integer
         minimum: 1
+        example: 1
+      description: ID numérico do veterinário.
     get:
       tags:
       - Veterinários
-      summary: Buscar por ID
+      summary: Buscar um veterinário por ID
+      description: Qualquer usuário autenticado.
       responses:
         200:
-          description: Registro encontrado
+          description: Veterinário encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VeterinarioOutput'
         400:
-          description: Dados inválidos
+          description: ID inválido (não numérico ou menor que 1).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErroValidacao'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhum veterinário com esse ID.
           content:
             application/json:
               schema:
@@ -283,7 +411,11 @@ paths:
     put:
       tags:
       - Veterinários
-      summary: Atualizar
+      summary: Atualizar um veterinário
+      description: >-
+        Restrito a GERENTE. Todos os campos do corpo são opcionais (atualização
+        parcial). Se "senha" for enviada, as mesmas regras de força da criação
+        se aplicam e ela é re-hasheada.
       requestBody:
         required: true
         content:
@@ -292,21 +424,31 @@ paths:
               $ref: '#/components/schemas/VeterinarioUpdate'
       responses:
         200:
-          description: Atualizado
+          description: Veterinário atualizado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VeterinarioRespostaEscrita'
         400:
-          description: Dados inválidos
+          description: Dados inválidos (formato de e-mail ou senha fora das regras).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErroValidacao'
-        404:
-          description: Não encontrado
+        401:
+          description: Token ausente, inválido ou expirado.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         403:
-          description: Perfil sem permissão
+          description: Autenticado como VETERINARIO (edição restrita a GERENTE).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        404:
+          description: Nenhum veterinário com esse ID.
           content:
             application/json:
               schema:
@@ -314,24 +456,37 @@ paths:
     delete:
       tags:
       - Veterinários
-      summary: Remover (somente GERENTE)
+      summary: Remover um veterinário
+      description: >-
+        Restrito a GERENTE. Falha com 409 se o veterinário tiver consultas
+        vinculadas (chave estrangeira em Consulta.veterinarioId).
       responses:
         200:
-          description: Removido
+          description: Veterinário removido com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensagemResposta'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         403:
-          description: Perfil sem permissão
+          description: Autenticado como VETERINARIO (exclusão restrita a GERENTE).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhum veterinário com esse ID.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         409:
-          description: Possui registros vinculados
+          description: O veterinário possui consultas vinculadas e não pode ser removido.
           content:
             application/json:
               schema:
@@ -340,12 +495,21 @@ paths:
     get:
       tags:
       - Tutores
-      summary: Listar tutores
+      summary: Listar todos os tutores
+      description: >-
+        Qualquer usuário autenticado. Retorna um array (vazio quando não há
+        registros), incluindo os pets de cada tutor.
       responses:
         200:
-          description: Lista (vazia quando não há registros)
+          description: Lista de tutores.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TutorOutput'
         401:
-          description: Não autenticado
+          description: Token ausente, inválido ou expirado.
           content:
             application/json:
               schema:
@@ -353,7 +517,8 @@ paths:
     post:
       tags:
       - Tutores
-      summary: Cadastrar
+      summary: Cadastrar um novo tutor
+      description: Qualquer usuário autenticado. "telefone" e "endereco" são opcionais.
       requestBody:
         required: true
         content:
@@ -362,21 +527,25 @@ paths:
               $ref: '#/components/schemas/TutorInput'
       responses:
         201:
-          description: Criado
+          description: Tutor criado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorRespostaEscrita'
         400:
-          description: Dados inválidos
+          description: Dados inválidos (nome com menos de 3 caracteres ou e-mail mal formatado).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErroValidacao'
         401:
-          description: Não autenticado
+          description: Token ausente, inválido ou expirado.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         409:
-          description: E-mail já cadastrado
+          description: E-mail já cadastrado.
           content:
             application/json:
               schema:
@@ -389,21 +558,34 @@ paths:
       schema:
         type: integer
         minimum: 1
+        example: 1
+      description: ID numérico do tutor.
     get:
       tags:
       - Tutores
-      summary: Buscar por ID
+      summary: Buscar um tutor por ID
+      description: Qualquer usuário autenticado. Inclui os pets do tutor.
       responses:
         200:
-          description: Registro encontrado
+          description: Tutor encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorOutput'
         400:
-          description: Dados inválidos
+          description: ID inválido (não numérico ou menor que 1).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErroValidacao'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhum tutor com esse ID.
           content:
             application/json:
               schema:
@@ -411,7 +593,8 @@ paths:
     put:
       tags:
       - Tutores
-      summary: Atualizar
+      summary: Atualizar um tutor
+      description: Qualquer usuário autenticado. Todos os campos do corpo são opcionais (atualização parcial).
       requestBody:
         required: true
         content:
@@ -420,15 +603,25 @@ paths:
               $ref: '#/components/schemas/TutorUpdate'
       responses:
         200:
-          description: Atualizado
+          description: Tutor atualizado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorRespostaEscrita'
         400:
-          description: Dados inválidos
+          description: Dados inválidos (nome com menos de 3 caracteres ou e-mail mal formatado).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErroValidacao'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhum tutor com esse ID.
           content:
             application/json:
               schema:
@@ -436,39 +629,60 @@ paths:
     delete:
       tags:
       - Tutores
-      summary: Remover (somente GERENTE)
+      summary: Remover um tutor
+      description: >-
+        Restrito a GERENTE. Remove também, em cascata (em uma única transação),
+        os pets do tutor e os agendamentos e consultas desses pets.
       responses:
         200:
-          description: Removido
+          description: Tutor removido com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensagemResposta'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         403:
-          description: Perfil sem permissão
+          description: Autenticado como VETERINARIO (exclusão restrita a GERENTE).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhum tutor com esse ID.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         409:
-          description: Possui registros vinculados
+          description: (Não deve ocorrer na prática — pets e histórico do tutor são removidos em cascata antes do delete.)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
-      description: Remove também os pets do tutor e os agendamentos e consultas desses pets.
   /pet:
     get:
       tags:
       - Pets
-      summary: Listar pets
+      summary: Listar todos os pets
+      description: >-
+        Qualquer usuário autenticado. Retorna um array (vazio quando não há
+        registros), incluindo os agendamentos e consultas de cada pet.
       responses:
         200:
-          description: Lista (vazia quando não há registros)
+          description: Lista de pets.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PetOutput'
         401:
-          description: Não autenticado
+          description: Token ausente, inválido ou expirado.
           content:
             application/json:
               schema:
@@ -476,7 +690,10 @@ paths:
     post:
       tags:
       - Pets
-      summary: Cadastrar
+      summary: Cadastrar um novo pet
+      description: >-
+        Qualquer usuário autenticado. "tutorId" deve apontar para um tutor
+        existente; caso contrário a API retorna 400 (violação de chave estrangeira).
       requestBody:
         required: true
         content:
@@ -485,11 +702,21 @@ paths:
               $ref: '#/components/schemas/PetInput'
       responses:
         201:
-          description: Criado
+          description: Pet criado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetRespostaEscrita'
         400:
-          description: Dados inválidos ou ID relacionado inexistente
+          description: Dados inválidos (campos obrigatórios ausentes, data inválida) ou "tutorId" inexistente.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ErroValidacao'
+                - $ref: '#/components/schemas/Erro'
         401:
-          description: Não autenticado
+          description: Token ausente, inválido ou expirado.
           content:
             application/json:
               schema:
@@ -502,21 +729,34 @@ paths:
       schema:
         type: integer
         minimum: 1
+        example: 1
+      description: ID numérico do pet.
     get:
       tags:
       - Pets
-      summary: Buscar por ID
+      summary: Buscar um pet por ID
+      description: Qualquer usuário autenticado. Inclui os agendamentos e consultas do pet.
       responses:
         200:
-          description: Registro encontrado
+          description: Pet encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetOutput'
         400:
-          description: Dados inválidos
+          description: ID inválido (não numérico ou menor que 1).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErroValidacao'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhum pet com esse ID.
           content:
             application/json:
               schema:
@@ -524,7 +764,11 @@ paths:
     put:
       tags:
       - Pets
-      summary: Atualizar
+      summary: Atualizar um pet
+      description: >-
+        Qualquer usuário autenticado. Todos os campos do corpo são opcionais
+        (atualização parcial). Se "tutorId" for enviado, deve apontar para um
+        tutor existente.
       requestBody:
         required: true
         content:
@@ -533,15 +777,27 @@ paths:
               $ref: '#/components/schemas/PetUpdate'
       responses:
         200:
-          description: Atualizado
-        400:
-          description: Dados inválidos
+          description: Pet atualizado com sucesso.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErroValidacao'
+                $ref: '#/components/schemas/PetRespostaEscrita'
+        400:
+          description: Dados inválidos (formato de data) ou "tutorId" inexistente.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ErroValidacao'
+                - $ref: '#/components/schemas/Erro'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhum pet com esse ID.
           content:
             application/json:
               schema:
@@ -549,39 +805,58 @@ paths:
     delete:
       tags:
       - Pets
-      summary: Remover (somente GERENTE)
+      summary: Remover um pet
+      description: >-
+        Restrito a GERENTE. Remove também, em cascata (em uma única transação),
+        os agendamentos e consultas do pet.
       responses:
         200:
-          description: Removido
+          description: Pet removido com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensagemResposta'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         403:
-          description: Perfil sem permissão
+          description: Autenticado como VETERINARIO (exclusão restrita a GERENTE).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhum pet com esse ID.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         409:
-          description: Possui registros vinculados
+          description: (Não deve ocorrer na prática — agendamentos e consultas do pet são removidos em cascata antes do delete.)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
-      description: Remove também os agendamentos e consultas do pet.
   /consulta:
     get:
       tags:
       - Consultas
-      summary: Listar consultas
+      summary: Listar todas as consultas
+      description: Qualquer usuário autenticado. Retorna um array (vazio quando não há registros).
       responses:
         200:
-          description: Lista (vazia quando não há registros)
+          description: Lista de consultas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConsultaOutput'
         401:
-          description: Não autenticado
+          description: Token ausente, inválido ou expirado.
           content:
             application/json:
               schema:
@@ -589,7 +864,11 @@ paths:
     post:
       tags:
       - Consultas
-      summary: Cadastrar
+      summary: Registrar uma nova consulta
+      description: >-
+        Qualquer usuário autenticado. "veterinarioId" e "petId" devem apontar
+        para registros existentes; caso contrário a API retorna 400 (violação
+        de chave estrangeira). "tratamento" é opcional.
       requestBody:
         required: true
         content:
@@ -598,11 +877,23 @@ paths:
               $ref: '#/components/schemas/ConsultaInput'
       responses:
         201:
-          description: Criado
+          description: Consulta registrada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsultaRespostaEscrita'
         400:
-          description: Dados inválidos ou ID relacionado inexistente
+          description: >-
+            Dados inválidos (campos obrigatórios ausentes, data inválida) ou
+            "veterinarioId"/"petId" inexistente.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ErroValidacao'
+                - $ref: '#/components/schemas/Erro'
         401:
-          description: Não autenticado
+          description: Token ausente, inválido ou expirado.
           content:
             application/json:
               schema:
@@ -615,21 +906,34 @@ paths:
       schema:
         type: integer
         minimum: 1
+        example: 1
+      description: ID numérico da consulta.
     get:
       tags:
       - Consultas
-      summary: Buscar por ID
+      summary: Buscar uma consulta por ID
+      description: Qualquer usuário autenticado.
       responses:
         200:
-          description: Registro encontrado
+          description: Consulta encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsultaOutput'
         400:
-          description: Dados inválidos
+          description: ID inválido (não numérico ou menor que 1).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErroValidacao'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhuma consulta com esse ID.
           content:
             application/json:
               schema:
@@ -637,7 +941,11 @@ paths:
     put:
       tags:
       - Consultas
-      summary: Atualizar
+      summary: Atualizar uma consulta
+      description: >-
+        Qualquer usuário autenticado. Todos os campos do corpo são opcionais
+        (atualização parcial). Se "veterinarioId"/"petId" forem enviados, devem
+        apontar para registros existentes.
       requestBody:
         required: true
         content:
@@ -646,15 +954,28 @@ paths:
               $ref: '#/components/schemas/ConsultaUpdate'
       responses:
         200:
-          description: Atualizado
-        400:
-          description: Dados inválidos
+          description: Consulta atualizada com sucesso.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErroValidacao'
+                $ref: '#/components/schemas/ConsultaRespostaEscrita'
+        400:
+          description: >-
+            Dados inválidos (formato de data) ou "veterinarioId"/"petId" inexistente.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ErroValidacao'
+                - $ref: '#/components/schemas/Erro'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhuma consulta com esse ID.
           content:
             application/json:
               schema:
@@ -662,24 +983,35 @@ paths:
     delete:
       tags:
       - Consultas
-      summary: Remover (somente GERENTE)
+      summary: Remover uma consulta
+      description: Restrito a GERENTE.
       responses:
         200:
-          description: Removido
+          description: Consulta removida com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensagemResposta'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         403:
-          description: Perfil sem permissão
+          description: Autenticado como VETERINARIO (exclusão restrita a GERENTE).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhuma consulta com esse ID.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         409:
-          description: Possui registros vinculados
+          description: (Não deve ocorrer na prática — Consulta não é referenciada por outra tabela.)
           content:
             application/json:
               schema:
@@ -688,12 +1020,19 @@ paths:
     get:
       tags:
       - Agendamentos
-      summary: Listar agendamentos
+      summary: Listar todos os agendamentos
+      description: Qualquer usuário autenticado. Retorna um array (vazio quando não há registros).
       responses:
         200:
-          description: Lista (vazia quando não há registros)
+          description: Lista de agendamentos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgendamentoOutput'
         401:
-          description: Não autenticado
+          description: Token ausente, inválido ou expirado.
           content:
             application/json:
               schema:
@@ -701,7 +1040,11 @@ paths:
     post:
       tags:
       - Agendamentos
-      summary: Cadastrar
+      summary: Criar um novo agendamento
+      description: >-
+        Qualquer usuário autenticado. "petId" deve apontar para um pet
+        existente; caso contrário a API retorna 400 (violação de chave estrangeira).
+        "observacao" é opcional.
       requestBody:
         required: true
         content:
@@ -710,11 +1053,21 @@ paths:
               $ref: '#/components/schemas/AgendamentoInput'
       responses:
         201:
-          description: Criado
+          description: Agendamento criado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendamentoRespostaEscrita'
         400:
-          description: Dados inválidos ou ID relacionado inexistente
+          description: Dados inválidos (campos obrigatórios ausentes, data inválida) ou "petId" inexistente.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ErroValidacao'
+                - $ref: '#/components/schemas/Erro'
         401:
-          description: Não autenticado
+          description: Token ausente, inválido ou expirado.
           content:
             application/json:
               schema:
@@ -727,21 +1080,34 @@ paths:
       schema:
         type: integer
         minimum: 1
+        example: 1
+      description: ID numérico do agendamento.
     get:
       tags:
       - Agendamentos
-      summary: Buscar por ID
+      summary: Buscar um agendamento por ID
+      description: Qualquer usuário autenticado.
       responses:
         200:
-          description: Registro encontrado
+          description: Agendamento encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendamentoOutput'
         400:
-          description: Dados inválidos
+          description: ID inválido (não numérico ou menor que 1).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErroValidacao'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhum agendamento com esse ID.
           content:
             application/json:
               schema:
@@ -749,7 +1115,10 @@ paths:
     put:
       tags:
       - Agendamentos
-      summary: Atualizar
+      summary: Atualizar um agendamento
+      description: >-
+        Qualquer usuário autenticado. Todos os campos do corpo são opcionais
+        (atualização parcial). Se "petId" for enviado, deve apontar para um pet existente.
       requestBody:
         required: true
         content:
@@ -758,15 +1127,27 @@ paths:
               $ref: '#/components/schemas/AgendamentoUpdate'
       responses:
         200:
-          description: Atualizado
-        400:
-          description: Dados inválidos
+          description: Agendamento atualizado com sucesso.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErroValidacao'
+                $ref: '#/components/schemas/AgendamentoRespostaEscrita'
+        400:
+          description: Dados inválidos (formato de data) ou "petId" inexistente.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ErroValidacao'
+                - $ref: '#/components/schemas/Erro'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhum agendamento com esse ID.
           content:
             application/json:
               schema:
@@ -774,24 +1155,35 @@ paths:
     delete:
       tags:
       - Agendamentos
-      summary: Remover (somente GERENTE)
+      summary: Remover um agendamento
+      description: Restrito a GERENTE.
       responses:
         200:
-          description: Removido
+          description: Agendamento removido com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensagemResposta'
+        401:
+          description: Token ausente, inválido ou expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
         403:
-          description: Perfil sem permissão
+          description: Autenticado como VETERINARIO (exclusão restrita a GERENTE).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         404:
-          description: Não encontrado
+          description: Nenhum agendamento com esse ID.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
         409:
-          description: Possui registros vinculados
+          description: (Não deve ocorrer na prática — Agendamento não é referenciado por outra tabela.)
           content:
             application/json:
               schema:
@@ -802,14 +1194,24 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: >-
+        Token obtido em POST /auth/login. Envie como "Authorization: Bearer <token>".
   schemas:
+    # ---------- Erros (componentes compartilhados, usados em toda a API) ----------
     Erro:
       type: object
+      description: Formato padrão de erro simples (401, 403, 404, 409 e demais falhas de negócio).
       properties:
         error:
           type: string
+          example: Registro não encontrado.
+      required:
+      - error
     ErroValidacao:
       type: object
+      description: >-
+        Formato de erro de validação (400), retornado pelo middleware Zod global.
+        "erros" lista cada campo inválido com sua mensagem específica.
       properties:
         error:
           type: string
@@ -821,8 +1223,27 @@ components:
             properties:
               campo:
                 type: string
+                example: email
               mensagem:
                 type: string
+                example: Email inválido.
+            required:
+            - campo
+            - mensagem
+      required:
+      - error
+      - erros
+    MensagemResposta:
+      type: object
+      description: Confirmação simples de sucesso, usada nas respostas de DELETE.
+      properties:
+        message:
+          type: string
+          example: Registro deletado com sucesso.
+      required:
+      - message
+
+    # ---------- Auth ----------
     LoginRequest:
       type: object
       required:
@@ -841,20 +1262,43 @@ components:
       properties:
         token:
           type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInRpcG8iOiJHRVJFTlRFIn0.4pQx8...
         tipo:
           type: string
           enum:
           - GERENTE
           - VETERINARIO
+          example: GERENTE
         usuario:
           type: object
           properties:
             id:
               type: integer
+              example: 1
             nome:
               type: string
+              example: Alice Silva
             email:
               type: string
+              example: alice@admin.com
+    AuthMeResponse:
+      type: object
+      description: >-
+        "usuario" tem o formato de GerenteOutput quando tipo=GERENTE, ou de
+        VeterinarioOutput (com o resumo de consultas) quando tipo=VETERINARIO.
+      properties:
+        tipo:
+          type: string
+          enum:
+          - GERENTE
+          - VETERINARIO
+          example: VETERINARIO
+        usuario:
+          oneOf:
+          - $ref: '#/components/schemas/GerenteOutput'
+          - $ref: '#/components/schemas/VeterinarioOutput'
+
+    # ---------- Gerente ----------
     GerenteInput:
       type: object
       required:
@@ -872,11 +1316,11 @@ components:
         senha:
           type: string
           minLength: 6
-          description: Mínimo 6 caracteres, com número e caractere especial.
+          description: Mínimo 6 caracteres, com pelo menos um número e um caractere especial.
           example: Senha@123
     GerenteUpdate:
       type: object
-      description: Todos os campos são opcionais.
+      description: Atualização parcial — todos os campos são opcionais.
       properties:
         nome:
           type: string
@@ -888,8 +1332,40 @@ components:
         senha:
           type: string
           minLength: 6
-          description: Mínimo 6 caracteres, com número e caractere especial.
+          description: Mínimo 6 caracteres, com pelo menos um número e um caractere especial.
           example: Senha@123
+    GerenteOutput:
+      type: object
+      description: Nunca inclui o campo de senha.
+      properties:
+        id:
+          type: integer
+          example: 1
+        nome:
+          type: string
+          example: Alice Silva
+        email:
+          type: string
+          example: alice@admin.com
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-01-15T13:00:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-02-20T09:30:00.000Z'
+    GerenteRespostaEscrita:
+      type: object
+      description: Envelope de resposta de POST/PUT, com mensagem de confirmação e o registro salvo.
+      properties:
+        message:
+          type: string
+          example: Gerente criado com sucesso.
+        data:
+          $ref: '#/components/schemas/GerenteOutput'
+
+    # ---------- Veterinário ----------
     VeterinarioInput:
       type: object
       required:
@@ -900,38 +1376,87 @@ components:
       properties:
         nome:
           type: string
-          example: Dra. Paula
+          example: Dra. Fernanda
         email:
           type: string
-          example: paula@vet.com
+          example: fernanda@vet.com
           format: email
         senha:
           type: string
           minLength: 6
-          description: Mínimo 6 caracteres, com número e caractere especial.
+          description: Mínimo 6 caracteres, com pelo menos um número e um caractere especial.
           example: Senha@123
         especialidade:
           type: string
-          example: Clínica geral
+          example: Cardiologia
     VeterinarioUpdate:
       type: object
-      description: Todos os campos são opcionais.
+      description: Atualização parcial — todos os campos são opcionais.
       properties:
         nome:
           type: string
-          example: Dra. Paula
+          example: Dra. Fernanda
         email:
           type: string
-          example: paula@vet.com
+          example: fernanda@vet.com
           format: email
         senha:
           type: string
           minLength: 6
-          description: Mínimo 6 caracteres, com número e caractere especial.
+          description: Mínimo 6 caracteres, com pelo menos um número e um caractere especial.
           example: Senha@123
         especialidade:
           type: string
-          example: Clínica geral
+          example: Cardiologia
+    VeterinarioOutput:
+      type: object
+      description: Nunca inclui o campo de senha. "consulta" é o resumo das consultas atendidas por esse veterinário.
+      properties:
+        id:
+          type: integer
+          example: 1
+        nome:
+          type: string
+          example: Dra. Fernanda
+        email:
+          type: string
+          example: fernanda@vet.com
+        especialidade:
+          type: string
+          example: Cardiologia
+        consulta:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 10
+              data:
+                type: string
+                format: date-time
+                example: '2026-10-11T09:00:00.000Z'
+              descricao:
+                type: string
+                example: Check-up cardíaco
+              tratamento:
+                type: string
+                nullable: true
+                example: Nenhum, apenas acompanhamento
+              petId:
+                type: integer
+                example: 1
+    VeterinarioRespostaEscrita:
+      type: object
+      description: Envelope de resposta de POST/PUT, com mensagem de confirmação e o registro salvo.
+      properties:
+        message:
+          type: string
+          example: Veterinário criado com sucesso.
+        data:
+          $ref: '#/components/schemas/VeterinarioOutput'
+
+    # ---------- Tutor ----------
     TutorInput:
       type: object
       required:
@@ -951,10 +1476,10 @@ components:
           example: (83) 99999-0000
         endereco:
           type: string
-          example: Rua A, 123
+          example: Rua das Acácias, 123, Bairro dos Estados
     TutorUpdate:
       type: object
-      description: Todos os campos são opcionais.
+      description: Atualização parcial — todos os campos são opcionais.
       properties:
         nome:
           type: string
@@ -969,7 +1494,53 @@ components:
           example: (83) 99999-0000
         endereco:
           type: string
-          example: Rua A, 123
+          example: Rua das Acácias, 123, Bairro dos Estados
+    TutorOutput:
+      type: object
+      description: O array "pets" só é incluído nas respostas de GET (listar e buscar por ID).
+      properties:
+        id:
+          type: integer
+          example: 1
+        nome:
+          type: string
+          example: Carlos Souza
+        email:
+          type: string
+          example: carlos@email.com
+        telefone:
+          type: string
+          nullable: true
+          example: (83) 99999-0000
+        endereco:
+          type: string
+          nullable: true
+          example: Rua das Acácias, 123, Bairro dos Estados
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-01-10T12:00:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-01-10T12:00:00.000Z'
+        pets:
+          type: array
+          items:
+            $ref: '#/components/schemas/PetOutput'
+    TutorRespostaEscrita:
+      type: object
+      description: >-
+        Envelope de resposta de POST/PUT, com mensagem de confirmação e o
+        registro salvo (sem o array "pets", presente apenas nas respostas de GET).
+      properties:
+        message:
+          type: string
+          example: Tutor criado com sucesso.
+        data:
+          $ref: '#/components/schemas/TutorOutput'
+
+    # ---------- Pet ----------
     PetInput:
       type: object
       required:
@@ -990,14 +1561,15 @@ components:
           example: Labrador
         dataNascimento:
           type: string
-          example: '2020-05-10'
+          example: '2018-05-10'
           format: date
         tutorId:
           type: integer
+          description: ID de um tutor já cadastrado.
           example: 1
     PetUpdate:
       type: object
-      description: Todos os campos são opcionais.
+      description: Atualização parcial — todos os campos são opcionais.
       properties:
         nome:
           type: string
@@ -1010,11 +1582,64 @@ components:
           example: Labrador
         dataNascimento:
           type: string
-          example: '2020-05-10'
+          example: '2018-05-10'
           format: date
         tutorId:
           type: integer
+          description: ID de um tutor já cadastrado.
           example: 1
+    PetOutput:
+      type: object
+      description: Os arrays "agendamentos" e "consultas" só são incluídos nas respostas de GET (listar e buscar por ID).
+      properties:
+        id:
+          type: integer
+          example: 1
+        nome:
+          type: string
+          example: Rex
+        especie:
+          type: string
+          example: Cachorro
+        raca:
+          type: string
+          example: Labrador
+        dataNascimento:
+          type: string
+          format: date-time
+          example: '2018-05-10T00:00:00.000Z'
+        tutorId:
+          type: integer
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-01-12T08:00:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-01-12T08:00:00.000Z'
+        agendamentos:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgendamentoOutput'
+        consultas:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsultaOutput'
+    PetRespostaEscrita:
+      type: object
+      description: >-
+        Envelope de resposta de POST/PUT, com mensagem de confirmação e o
+        registro salvo (sem os arrays "agendamentos"/"consultas", presentes apenas nas respostas de GET).
+      properties:
+        message:
+          type: string
+          example: Pet criado com sucesso.
+        data:
+          $ref: '#/components/schemas/PetOutput'
+
+    # ---------- Consulta ----------
     ConsultaInput:
       type: object
       required:
@@ -1029,24 +1654,52 @@ components:
           format: date-time
         veterinarioId:
           type: integer
+          description: ID de um veterinário já cadastrado.
           example: 1
         petId:
           type: integer
+          description: ID de um pet já cadastrado.
           example: 1
         descricao:
           type: string
-          example: Check-up anual
+          example: Check-up cardíaco anual
         tratamento:
           type: string
-          example: Vermífugo
+          description: Opcional.
+          example: Nenhum, apenas acompanhamento
     ConsultaUpdate:
       type: object
-      description: Todos os campos são opcionais.
+      description: Atualização parcial — todos os campos são opcionais.
       properties:
         data:
           type: string
           example: '2026-10-01T14:00:00.000Z'
           format: date-time
+        veterinarioId:
+          type: integer
+          description: ID de um veterinário já cadastrado.
+          example: 1
+        petId:
+          type: integer
+          description: ID de um pet já cadastrado.
+          example: 1
+        descricao:
+          type: string
+          example: Check-up cardíaco anual
+        tratamento:
+          type: string
+          description: Opcional.
+          example: Nenhum, apenas acompanhamento
+    ConsultaOutput:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        data:
+          type: string
+          format: date-time
+          example: '2026-10-01T14:00:00.000Z'
         veterinarioId:
           type: integer
           example: 1
@@ -1055,10 +1708,30 @@ components:
           example: 1
         descricao:
           type: string
-          example: Check-up anual
+          example: Check-up cardíaco anual
         tratamento:
           type: string
-          example: Vermífugo
+          nullable: true
+          example: Nenhum, apenas acompanhamento
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-09-20T11:00:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-09-20T11:00:00.000Z'
+    ConsultaRespostaEscrita:
+      type: object
+      description: Envelope de resposta de POST/PUT, com mensagem de confirmação e o registro salvo.
+      properties:
+        message:
+          type: string
+          example: Consulta criada com sucesso.
+        data:
+          $ref: '#/components/schemas/ConsultaOutput'
+
+    # ---------- Agendamento ----------
     AgendamentoInput:
       type: object
       required:
@@ -1075,13 +1748,15 @@ components:
           example: Banho e tosa
         observacao:
           type: string
-          example: Pelo longo
+          description: Opcional.
+          example: Pelo longo, usar shampoo antialérgico
         petId:
           type: integer
+          description: ID de um pet já cadastrado.
           example: 1
     AgendamentoUpdate:
       type: object
-      description: Todos os campos são opcionais.
+      description: Atualização parcial — todos os campos são opcionais.
       properties:
         data:
           type: string
@@ -1092,7 +1767,46 @@ components:
           example: Banho e tosa
         observacao:
           type: string
-          example: Pelo longo
+          description: Opcional.
+          example: Pelo longo, usar shampoo antialérgico
+        petId:
+          type: integer
+          description: ID de um pet já cadastrado.
+          example: 1
+    AgendamentoOutput:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        data:
+          type: string
+          format: date-time
+          example: '2026-10-02T10:00:00.000Z'
+        servico:
+          type: string
+          example: Banho e tosa
+        observacao:
+          type: string
+          nullable: true
+          example: Pelo longo, usar shampoo antialérgico
         petId:
           type: integer
           example: 1
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-09-20T11:00:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-09-20T11:00:00.000Z'
+    AgendamentoRespostaEscrita:
+      type: object
+      description: Envelope de resposta de POST/PUT, com mensagem de confirmação e o registro salvo.
+      properties:
+        message:
+          type: string
+          example: Agendamento criado com sucesso.
+        data:
+          $ref: '#/components/schemas/AgendamentoOutput'
